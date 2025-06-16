@@ -1,6 +1,6 @@
 #include "Capture.h"
 
-Capture::Capture(std::string filename): outFilename(filename) {}
+Capture::Capture(std::string _filename, Settings* _settings): fileName(_filename), settings(_settings) {}
 
 void Capture::startScreenRecord() {
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
@@ -15,9 +15,14 @@ void Capture::startScreenRecord() {
     si.hStdOutput = NULL;
 
     std::stringstream ss;
-    ss << "ffmpeg -f gdigrab -framerate 30 -i desktop -c:v h264_nvenc -qp 0 " << outFilename;
+ 
+    ss << "ffmpeg -f gdigrab -framerate " << settings->fps << " -i desktop " << "-f dshow -i audio=\"" << settings->steroDevice << "\" ";
+    if (settings->nvidia)
+        ss << "-c:v h264_nvenc -qp 0 ";
+    ss << fileName;
 
     std::string cmd = ss.str();
+    
 
     if(!CreateProcess(NULL, (LPSTR)cmd.data(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &ffmpegProcess)) {
         std::cerr << "Failed to create process" << std::endl;

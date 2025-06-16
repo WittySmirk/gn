@@ -6,16 +6,19 @@
 #include <string>
 #include <sstream>
 
+#include "Settings.h"
+
 class Capture {
     public:
-        Capture(std::string filename);
+        Capture(std::string _filename, Settings* _settings);
         void startScreenRecord();
         void endScreenRecord();
     private:
-        std::string outFilename;
+        std::string fileName;
         PROCESS_INFORMATION ffmpegProcess = {0};
         HANDLE hStdInRead = NULL;
         HANDLE hStdInWrite = NULL;
+        Settings* settings;
 };
 
 #endif

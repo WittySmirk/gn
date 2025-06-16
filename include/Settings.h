@@ -11,7 +11,6 @@ struct Settings {
     
     bool readSettings();
     void createSettings();
-    // TODO: template function for getting setting
     // Hardware
     bool nvidia;
     bool amd;

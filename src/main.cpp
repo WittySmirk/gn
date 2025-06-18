@@ -5,6 +5,7 @@
 #include "Capture.h"
 #include "Settings.h"
 #include "Background.h"
+#include "Gui.h"
 
 int main() {
     Settings settings;
@@ -16,9 +17,11 @@ int main() {
     std::stringstream ss;
     ss << settings.outputFolder << r << ".mp4";
 
+    Gui gui;
+
     Capture capture(ss.str(), &settings);
 
-    Background background(&capture);
+    Background background(&capture, &gui);
     background.listenForHotkey();
 
     return 0;

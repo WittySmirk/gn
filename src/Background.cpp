@@ -1,6 +1,6 @@
 #include "Background.h"
 
-Background::Background(Capture* _capture): capture(_capture) {
+Background::Background(Capture* _capture, Gui* _gui): capture(_capture), gui(_gui) {
     wc.lpfnWndProc = windowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = (LPCSTR)"GN";
@@ -31,7 +31,11 @@ Background::~Background() {
 
 void Background::listenForHotkey() {
     if(!RegisterHotKey(hwnd, START_STOP_ID, MOD_SHIFT, VK_F4)) {
-        std::cerr << "Failed to register hotkey" << std::endl;
+        std::cerr << "Failed to register capture hotkey" << std::endl;
+    }
+
+    if(!RegisterHotKey(hwnd, OPEN_GUI_ID, MOD_SHIFT, VK_F3)) {
+        std::cerr << "Failed to register gui hotkey" << std::endl;
     }
 
     MSG msg;
@@ -76,6 +80,15 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                 }
                 return 0;
             }
+            if(wParam == OPEN_GUI_ID) {
+                if(!guiOpen) {
+                    guiOpen = true;
+                    gui->openWindow(); // TODO: potentially figure out/fix threading issues
+                } else {
+                    guiOpen = false;
+                    gui->closeWindow();
+                }
+            }            
             break;
         case WM_DESTROY:
             PostQuitMessage(0);

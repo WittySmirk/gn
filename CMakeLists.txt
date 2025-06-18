@@ -5,8 +5,13 @@ project(gn CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(FFMPEG_DIR "C:/Users/wyatt/OneDrive/Desktop/ffmpeg")
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h")
+
+add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 
 add_executable(gn ${SOURCES} ${HEADERS})
 
@@ -22,4 +27,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${FFMPEG_DIR}/lib/avdevice.lib
     ${FFMPEG_DIR}/lib/swscale.lib
     ${FFMPEG_DIR}/lib/swresample.lib
+    SDL3::SDL3
 )

@@ -10,15 +10,13 @@
 
 class Capture {
     public:
-        Capture(std::string _filename, Settings* _settings);
-        void startScreenRecord();
+        Capture();
+        void startScreenRecord(std::string filename, Settings* settings);
         void endScreenRecord();
     private:
-        std::string fileName;
         PROCESS_INFORMATION ffmpegProcess = {0};
         HANDLE hStdInRead = NULL;
         HANDLE hStdInWrite = NULL;
-        Settings* settings;
 };
 
 #endif

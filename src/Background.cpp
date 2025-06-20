@@ -1,9 +1,9 @@
 #include "Background.h"
 
-Background::Background(Capture* _capture, Gui* _gui): capture(_capture), gui(_gui) {
+Background::Background(Settings* _settings, Capture* _capture, Gui* _gui): settings(_settings), capture(_capture), gui(_gui) {
     wc.lpfnWndProc = windowProc;
     wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = (LPCSTR)"GN";
+    wc.lpszClassName = (LPCSTR)"gn";
     RegisterClass(&wc);
 
     hwnd = CreateWindowEx(
@@ -62,16 +62,16 @@ LRESULT CALLBACK Background::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 }
 
 LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static std::thread appThread;
-    static bool recording = false;
-
     switch(uMsg) {
         case WM_HOTKEY:
             if(wParam == START_STOP_ID) {
                 if (!recording) {
                     recording = true;
                     appThread = std::thread([this](){
-                        capture->startScreenRecord();
+                        std::time_t r = std::time(0);
+                        std::stringstream ss;
+                        ss << settings->outputFolder << r << ".mp4";
+                        capture->startScreenRecord(ss.str(), settings);
                     });
                 } else {
                     capture->endScreenRecord();
@@ -83,10 +83,10 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             if(wParam == OPEN_GUI_ID) {
                 if(!guiOpen) {
                     guiOpen = true;
-                    gui->openWindow(); // TODO: potentially figure out/fix threading issues
+                    gui->spawn(settings);
                 } else {
                     guiOpen = false;
-                    gui->closeWindow();
+                    gui->kill();
                 }
             }            
             break;

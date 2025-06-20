@@ -1,0 +1,34 @@
+#ifndef ELEMENT_H
+#define ELEMENT_H
+
+#include <SDL3/SDL.h>
+#include <iostream>
+#include <functional>
+
+class Element {
+    public:
+        Element(SDL_Renderer* _renderer);
+        virtual ~Element();
+        virtual void checkMouse(SDL_MouseButtonEvent* _lastMouse);
+        virtual void draw();
+
+        void setRect(SDL_FRect* _rect);
+        void setTexture(SDL_Texture* _texture);
+        void setBackColor(SDL_Color _borderColor);
+        void setButton(std::function<void()>);
+        void setRendered(bool _rendered);
+        
+        bool getRendered() { return rendered;}
+    protected:
+        SDL_Renderer* renderer = nullptr;
+    private:
+        bool clickable = false;
+        bool button = false;
+        bool rendered = true;
+        SDL_FRect* rect = nullptr;
+        SDL_Texture* texture = nullptr;
+        SDL_Color borderColor;
+        std::function<void()> clickCallback;
+};
+
+#endif

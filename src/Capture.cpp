@@ -1,8 +1,8 @@
 #include "Capture.h"
 
-Capture::Capture(std::string _filename, Settings* _settings): fileName(_filename), settings(_settings) {}
+Capture::Capture() {}
 
-void Capture::startScreenRecord() {
+void Capture::startScreenRecord(std::string fileName, Settings* settings) {
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
     CreatePipe(&hStdInRead, &hStdInWrite, &sa, 0);
     SetHandleInformation(hStdInWrite, HANDLE_FLAG_INHERIT, 0);

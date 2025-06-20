@@ -4,7 +4,9 @@
 #include <windows.h>
 #include <iostream>
 #include <thread>
+#include <ctime>
 
+#include "Settings.h"
 #include "Capture.h"
 #include "Gui.h"
 
@@ -13,18 +15,22 @@
 
 class Background {
     public:
-        Background(Capture* _capture, Gui* _gui);
+        Background(Settings* _settings, Capture* _capture, Gui* _gui);
         ~Background();
         void listenForHotkey();
     private:
         static LRESULT CALLBACK windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
         LRESULT handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
         
+        std::thread appThread;
+        bool recording = false;
+        bool guiOpen = false;
+
         HWND hwnd;
         WNDCLASS wc = {};
         Capture* capture;
-        bool guiOpen = false;
         Gui* gui;
+        Settings* settings;
 };
 
 

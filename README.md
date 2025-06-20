@@ -1,4 +1,4 @@
-# GN
+# gn
 ## Minimalist clipping software without the bloat
 Easily record and trim clips and save to computer or upload to Google Drive
 
@@ -21,5 +21,3 @@ cmake --build build
 
 ## Disclaimer
 Right now this application is only available on Windows. It is possible to make multiplatform, but right now it relies heavily on Win32 apis.
-
-

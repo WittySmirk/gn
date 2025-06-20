@@ -10,9 +10,7 @@
 #include "Capture.h"
 #include "Element.h"
 #include "MultiSelect.h"
-
-#define SCREEN_W 1280
-#define SCREEN_H 720
+#include "Text.h"
 
 #define BACKGROUND_COLOR SDL_Color {34, 32, 52, 0}
 #define FOREGROUND_WHITE SDL_Color {226, 255, 211, 0}

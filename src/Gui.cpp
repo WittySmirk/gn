@@ -107,56 +107,28 @@ void Gui::openWindow() {
 void Gui::createSetup() {
     switch(state) {
         case State::SETUPSTAGE1: {
-            SDL_Surface* s1 = TTF_RenderText_Blended(font, "First Time?", 0, FOREGROUND_WHITE);
-            SDL_Texture* t1 = SDL_CreateTextureFromSurface(renderer, s1);
-            int textW = s1->w;
-            int textH = s1->h;
-            SDL_DestroySurface(s1);
-            SDL_FRect* r1 = new SDL_FRect{(float)((SCREEN_W / 2) - (textW / 2)), (float)((SCREEN_H / 2) - (textH / 2)) * 0.4f, (float)textW, (float)textH};
+            Text* t1 = new Text(renderer, font, "First Time?", 1.0f, 48, FOREGROUND_WHITE);
+            pipe.push_back(t1);
 
-            Element* e= new  Element(renderer);
-            e->setTexture(t1);
-            e->setRect(r1);
-            pipe.push_back(e);
-
-            TTF_SetFontSize(font, 34);
-            SDL_Surface* s2 = TTF_RenderText_Blended(font, "Setup", 0, FOREGROUND_WHITE);
-            SDL_Texture* t2 = SDL_CreateTextureFromSurface(renderer, s2);
-            textW = s2->w;
-            textH = s2->h;
-            SDL_FRect* r2 = new SDL_FRect{(float)((SCREEN_W / 2) - (textW / 2)), (float)((SCREEN_H / 2) - (textH / 2)) * 0.8f, (float)textW, (float)textH};
-            
-            Element* e2 = new Element(renderer);
-            e2->setTexture(t2);
-            e2->setRect(r2);
-            e2->setBackColor(HIGHLIGHT_BLUE);
-            e2->setButton([this](){
+            Text* t2 = new Text(renderer, font, "Setup", 1.2f, 34, FOREGROUND_WHITE);
+            t2->setBackColor(HIGHLIGHT_BLUE);
+            t2->setButton([this](){
                 state = State::SETUPSTAGE2;
             });
-            pipe.push_back(e2);
+            pipe.push_back(t2);
 
             break;
         }
         case State::SETUPSTAGE2:{
             settings->detectGPU();
 
-            TTF_SetFontSize(font, 40);
-            SDL_Surface* s1 = TTF_RenderText_Blended(font, "Pick Capture Location", 0, FOREGROUND_WHITE);
-            SDL_Texture* t1 = SDL_CreateTextureFromSurface(renderer, s1);
-            int textW = s1->w;
-            int textH = s1->h;
-            SDL_DestroySurface(s1);
-            SDL_FRect* r1 = new SDL_FRect{100.0f, 100.0f, (float)textW, (float)textH};
-
-            Element* e1 = new Element(renderer);
-            e1->setTexture(t1);
-            e1->setRect(r1);
-            e1->setButton([this](){
+            Text* t1 = new Text(renderer, font, "Pick Capture Location", 100, 100, 40, FOREGROUND_WHITE);
+            t1->setButton([this](){
                 currentSetting = SettingsE::OUTPUTFOLDER;
                 SDL_ShowOpenFolderDialog(folderCallback, this, window, nullptr, false);
             });
-            e1->setBackColor(HIGHLIGHT_BLUE);
-            pipe.push_back(e1);
+            t1->setBackColor(HIGHLIGHT_BLUE);
+            pipe.push_back(t1);
 
             MultiSelect* m = new MultiSelect(renderer, font, "Select fps", std::vector<MultiItem>{
                 MultiItem{"30 fps", [this](){settings->fps = 30;}},
@@ -201,37 +173,16 @@ void Gui::createSetup() {
                 gpu = "No gpu detected";
             }
 
-            SDL_Surface* s2 = TTF_RenderText_Blended(font, gpu.c_str(), 0, FOREGROUND_WHITE);
-            SDL_Texture* t2 = SDL_CreateTextureFromSurface(renderer, s2);
-            textW = s2->w;
-            textH = s2->h;
-            SDL_DestroySurface(s2);
+            Text* t2 = new Text(renderer, font, gpu, 600, 600, 32, FOREGROUND_WHITE);
+            pipe.push_back(t2);
 
-            SDL_FRect* r2 = new SDL_FRect{600.0f, 600.0f, (float)textW, (float)textH};
-
-            Element* e2 = new Element(renderer);
-            e2->setTexture(t2);
-            e2->setRect(r2);
-            pipe.push_back(e2);
-
-
-            SDL_Surface* s3 = TTF_RenderText_Blended(font, "Finished", 0, FOREGROUND_WHITE);
-            SDL_Texture* t3 = SDL_CreateTextureFromSurface(renderer, s3);
-            textW = s3->w;
-            textH = s3->h;
-            SDL_DestroySurface(s3);
-
-            SDL_FRect* r3 = new SDL_FRect{700.0f, 500.0f, (float)textW, (float)textH};
-            Element* e3 = new Element(renderer);
-            e3->setTexture(t3);
-            e3->setRect(r3);
-            e3->setBackColor(HIGHLIGHT_BLUE);
-            e3->setButton([this](){
+            Text* t3 = new Text(renderer, font, "Finished", 700, 500, 32, FOREGROUND_WHITE);
+            t3->setBackColor(HIGHLIGHT_BLUE);
+            t3->setButton([this](){
                 settings->writeSettingsFile();
                 quit = true;
             });
-
-            pipe.push_back(e3);
+            pipe.push_back(t3);
 
             break;
         }

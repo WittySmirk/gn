@@ -29,9 +29,15 @@ void Element::draw() {
 }
 
 void Element::setRect(SDL_FRect* _rect) {
+    if(rect != nullptr) {
+        delete rect;
+    }
     rect = _rect;
 }
 void Element::setTexture(SDL_Texture* _texture) {
+    if(texture != nullptr) {
+        SDL_DestroyTexture(texture);
+    }
     texture = _texture;
 }
 void Element::setBackColor(SDL_Color _backColor) {
@@ -44,4 +50,8 @@ void Element::setButton(std::function<void()> _callback) {
 }
 void Element::setRendered(bool _rendered) {
     rendered = _rendered;
+}
+
+SDL_FRect* Element::getRect() {
+    return rect;
 }

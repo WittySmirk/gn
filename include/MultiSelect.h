@@ -9,6 +9,7 @@
 #include <functional>
 
 #include "Element.h"
+#include "Text.h"
 #include "Gui.h"
 
 struct MultiItem {
@@ -16,7 +17,7 @@ struct MultiItem {
     std::function<void()> f;
 };
 
-class MultiSelect: public Element {
+class MultiSelect: public Text {
     public:
         MultiSelect(SDL_Renderer* _renderer, TTF_Font* _font, std::string _main, std::vector<MultiItem> _items, int _x, int _y);
         ~MultiSelect();
@@ -24,8 +25,9 @@ class MultiSelect: public Element {
         void draw();
         void free();
     private:
+        TTF_Font* font;
         void toggle();
-        std::vector<Element*> children;
+        std::vector<Text*> children;
         bool toggled = false;
 };
 

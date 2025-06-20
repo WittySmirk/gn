@@ -5,6 +5,9 @@
 #include <iostream>
 #include <functional>
 
+#define SCREEN_W 1280
+#define SCREEN_H 720
+
 class Element {
     public:
         Element(SDL_Renderer* _renderer);
@@ -19,6 +22,7 @@ class Element {
         void setRendered(bool _rendered);
         
         bool getRendered() { return rendered;}
+        SDL_FRect* getRect();
     protected:
         SDL_Renderer* renderer = nullptr;
     private:

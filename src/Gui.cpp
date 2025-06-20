@@ -139,11 +139,6 @@ void Gui::createSetup() {
         }
         case State::SETUPSTAGE2:{
             settings->detectGPU();
-            std::vector<std::string> devices = settings->findAudioDevices();
-
-            for(std::string& s : devices) {
-                std::cout << s << std::endl;
-            }
 
             TTF_SetFontSize(font, 40);
             SDL_Surface* s1 = TTF_RenderText_Blended(font, "Pick Capture Location", 0, FOREGROUND_WHITE);
@@ -164,12 +159,79 @@ void Gui::createSetup() {
             pipe.push_back(e1);
 
             MultiSelect* m = new MultiSelect(renderer, font, "Select fps", std::vector<MultiItem>{
-                MultiItem{"30 fps", [this](){settings->fps = 30; std::cout << "30 fps";}},
-                MultiItem{"60 fps", [this](){settings->fps = 60; std::cout << "60 fps";}},
-                MultiItem{"120 fps", [this](){settings->fps = 120; std::cout << "120 fps";}}
+                MultiItem{"30 fps", [this](){settings->fps = 30;}},
+                MultiItem{"60 fps", [this](){settings->fps = 60;}},
+                MultiItem{"120 fps", [this](){settings->fps = 120;}}
             }, 
                 200, 200);
             pipe.push_back(m);
+
+            std::vector<MultiItem> audioItems;
+            std::vector<std::string> devices = settings->findAudioDevices();
+            for(std::string& s : devices) {
+                MultiItem i = {s, [s, this](){
+                    settings->steroDevice = s;
+                    std::cout << settings->steroDevice << std::endl;
+                }};
+                audioItems.push_back(i);
+            }
+
+            MultiSelect* m2 = new MultiSelect(renderer, font, "Select Stereo Device", audioItems, 300, 300);
+            pipe.push_back(m2);
+            
+            // Have to change the lambdas for setting mic
+            audioItems.clear();
+            for(std::string& s : devices) {
+                MultiItem i = {s, [s, this](){
+                    settings->mic = s;
+                    std::cout << settings->mic << std::endl;
+                }};
+                audioItems.push_back(i);
+            }
+
+            MultiSelect* m3 = new MultiSelect(renderer, font, "Select Mic", audioItems, 400, 400);
+            pipe.push_back(m3);
+
+            std::string gpu;
+            if (settings->amd) {
+                gpu = "Detected AMD gpu";
+            } else if (settings->nvidia) {
+                gpu = "Detected NVIDIA gpu";
+            } else {
+                gpu = "No gpu detected";
+            }
+
+            SDL_Surface* s2 = TTF_RenderText_Blended(font, gpu.c_str(), 0, FOREGROUND_WHITE);
+            SDL_Texture* t2 = SDL_CreateTextureFromSurface(renderer, s2);
+            textW = s2->w;
+            textH = s2->h;
+            SDL_DestroySurface(s2);
+
+            SDL_FRect* r2 = new SDL_FRect{600.0f, 600.0f, (float)textW, (float)textH};
+
+            Element* e2 = new Element(renderer);
+            e2->setTexture(t2);
+            e2->setRect(r2);
+            pipe.push_back(e2);
+
+
+            SDL_Surface* s3 = TTF_RenderText_Blended(font, "Finished", 0, FOREGROUND_WHITE);
+            SDL_Texture* t3 = SDL_CreateTextureFromSurface(renderer, s3);
+            textW = s3->w;
+            textH = s3->h;
+            SDL_DestroySurface(s3);
+
+            SDL_FRect* r3 = new SDL_FRect{700.0f, 500.0f, (float)textW, (float)textH};
+            Element* e3 = new Element(renderer);
+            e3->setTexture(t3);
+            e3->setRect(r3);
+            e3->setBackColor(HIGHLIGHT_BLUE);
+            e3->setButton([this](){
+                settings->writeSettingsFile();
+                quit = true;
+            });
+
+            pipe.push_back(e3);
 
             break;
         }
@@ -180,7 +242,11 @@ void Gui::folderCallback(void* userData, const char* const* files, int filter) {
     // TODO: handle closing or not picking folder
     Gui* self = static_cast<Gui*>(userData);
     if (self->currentSetting = SettingsE::OUTPUTFOLDER) {
-        self->settings->outputFolder = files[0];
+        std::stringstream ss;
+        ss << files[0];
+        ss << "\\";
+
+        self->settings->outputFolder = ss.str();
         std::cout << self->settings->outputFolder << std::endl;
     }
 }

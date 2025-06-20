@@ -51,8 +51,25 @@ bool Settings::readSettings() {
     return true;
 }
 
-void Settings::writeSettingsFile() {
-    std::cout << "TODO: Create Settings" << std::endl;
+bool Settings::writeSettingsFile() {
+    std::ofstream out("Settings");
+    if(!out) {
+        std::cerr << "output didn't work" << std::endl;
+        return false;
+    }
+
+    out << "[HARDWARE]" << std::endl;
+    out << "nvidia=" << nvidia << std::endl;
+    out << "amd=" << amd << std::endl;
+    out << "stereoDevice=" << steroDevice << std::endl;
+    out << "mic=" << mic << std::endl;
+    out << "\n";
+    out << "[SETTINGS]" << std::endl;
+    out << "fps=" << fps << std::endl;
+    out << "outputFolder=" << outputFolder << std::endl;
+    
+    out.close();
+    return true;
 }
 
 void Settings::detectGPU() {

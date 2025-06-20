@@ -8,7 +8,7 @@ Element::~Element() {
 }
 
 void Element::checkMouse(SDL_MouseButtonEvent* _lastMouse) {
-    if (clickable) {
+    if (clickable && rendered) {
         if(_lastMouse->x >= rect->x && _lastMouse->x <= rect->x + rect->w
             && _lastMouse->y >= rect->y && _lastMouse->y <= rect->y + rect->h) {
                 clickCallback();

@@ -71,6 +71,7 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                         std::time_t r = std::time(0);
                         std::stringstream ss;
                         ss << settings->outputFolder << r << ".mp4";
+                        std::cout << ss.str() << std::endl;
                         capture->startScreenRecord(ss.str(), settings);
                     });
                 } else {

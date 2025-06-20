@@ -26,7 +26,7 @@ struct Settings {
     Settings();
     
     bool readSettings();
-    void writeSettingsFile();
+    bool writeSettingsFile();
     void detectGPU();
     std::vector<std::string> findAudioDevices();
 

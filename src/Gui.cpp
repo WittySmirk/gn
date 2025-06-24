@@ -22,6 +22,8 @@ void Gui::pickRightSetup() {
         case State::SETUPSTAGE3:
             createSetup();
         break;
+        case State::EDITING:
+            editor = new Editor();
     }
 
 }
@@ -51,6 +53,13 @@ void Gui::openWindow() {
     renderer = SDL_CreateRenderer(window, nullptr);
 
     pickRightSetup();
+    
+    if (state == State::EDITING) {
+        Element* e = new Element(renderer);
+        pipe.push_back(e);
+        editor->init("C:\\Users\\wyatt\\Documents\\Programming\\gn\\captures\\1750389092.mp4", e);
+        editor->read();
+    }
 
     SDL_Event event;
     State lastKnownState = state;
@@ -90,6 +99,11 @@ void Gui::openWindow() {
             e->draw();
         }
 
+        for(Element* e : pipe) {
+            if(e->hasOverlay())
+                e->draw();
+        }
+
         SDL_RenderPresent(renderer);
     }
 
@@ -121,21 +135,25 @@ void Gui::createSetup() {
         }
         case State::SETUPSTAGE2:{
             settings->detectGPU();
+            const int padding = 25;
 
-            Text* t1 = new Text(renderer, font, "Pick Capture Location", 100, 100, 40, FOREGROUND_WHITE);
-            t1->setButton([this](){
+            Text* t1 = new Text(renderer, font, "Setup", padding, padding, 48, FOREGROUND_WHITE);
+            pipe.push_back(t1);
+
+            Text* t2 = new Text(renderer, font, "Pick Capture Location", padding, t1->getRect()->y + t1->getRect()->h + padding, 34, FOREGROUND_WHITE);
+            t2->setButton([this, t2](){
                 currentSetting = SettingsE::OUTPUTFOLDER;
                 SDL_ShowOpenFolderDialog(folderCallback, this, window, nullptr, false);
             });
-            t1->setBackColor(HIGHLIGHT_BLUE);
-            pipe.push_back(t1);
+            t2->setBackColor(HIGHLIGHT_BLUE);
+            pipe.push_back(t2);
 
             MultiSelect* m = new MultiSelect(renderer, font, "Select fps", std::vector<MultiItem>{
                 MultiItem{"30 fps", [this](){settings->fps = 30;}},
                 MultiItem{"60 fps", [this](){settings->fps = 60;}},
                 MultiItem{"120 fps", [this](){settings->fps = 120;}}
             }, 
-                200, 200);
+                padding, t2->getRect()->y + t2->getRect()->h + padding);
             pipe.push_back(m);
 
             std::vector<MultiItem> audioItems;
@@ -148,7 +166,7 @@ void Gui::createSetup() {
                 audioItems.push_back(i);
             }
 
-            MultiSelect* m2 = new MultiSelect(renderer, font, "Select Stereo Device", audioItems, 300, 300);
+            MultiSelect* m2 = new MultiSelect(renderer, font, "Select Stereo Device", audioItems, padding, m->getRect()->y + m->getRect()->h + padding);
             pipe.push_back(m2);
             
             // Have to change the lambdas for setting mic
@@ -161,7 +179,7 @@ void Gui::createSetup() {
                 audioItems.push_back(i);
             }
 
-            MultiSelect* m3 = new MultiSelect(renderer, font, "Select Mic", audioItems, 400, 400);
+            MultiSelect* m3 = new MultiSelect(renderer, font, "Select Mic", audioItems, padding, m2->getRect()->y + m->getRect()->h + padding);
             pipe.push_back(m3);
 
             std::string gpu;
@@ -173,16 +191,25 @@ void Gui::createSetup() {
                 gpu = "No gpu detected";
             }
 
-            Text* t2 = new Text(renderer, font, gpu, 600, 600, 32, FOREGROUND_WHITE);
-            pipe.push_back(t2);
+            Text* t3 = new Text(renderer, font, gpu, padding, SCREEN_H - padding * 2, 34, FOREGROUND_WHITE);
+            pipe.push_back(t3);
 
-            Text* t3 = new Text(renderer, font, "Finished", 700, 500, 32, FOREGROUND_WHITE);
-            t3->setBackColor(HIGHLIGHT_BLUE);
-            t3->setButton([this](){
-                settings->writeSettingsFile();
+
+            Text* error = new Text(renderer, font, "Please set all before finishing setup", padding, t3->getRect()->y - t3->getRect()->h - padding, 34, FOREGROUND_YELLOW);
+            error->setRendered(false);
+            pipe.push_back(error);
+
+            Text* t4 = new Text(renderer, font, "Finished", padding, m3->getRect()->y + m3->getRect()->h + padding, 34, FOREGROUND_WHITE);
+            t4->setBackColor(HIGHLIGHT_BLUE);
+            t4->setButton([this, error](){
+                if(!settings->writeSettingsFile()) {
+                    error->setRendered(true);
+                    return;
+                }
                 quit = true;
             });
-            pipe.push_back(t3);
+            pipe.push_back(t4);
+
 
             break;
         }

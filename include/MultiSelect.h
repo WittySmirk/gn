@@ -23,7 +23,8 @@ class MultiSelect: public Text {
         ~MultiSelect();
         void checkMouse(SDL_MouseButtonEvent* _lastMouse);
         void draw();
-        void free();
+
+        bool hasOverlay() {return toggled;}
     private:
         TTF_Font* font;
         void toggle();

@@ -21,8 +21,11 @@ class Element {
         void setButton(std::function<void()>);
         void setRendered(bool _rendered);
         
+        virtual bool hasOverlay() {return false;}
+
         bool getRendered() { return rendered;}
         SDL_FRect* getRect();
+        SDL_Renderer* getRenderer();
     protected:
         SDL_Renderer* renderer = nullptr;
     private:

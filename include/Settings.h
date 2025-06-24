@@ -33,12 +33,12 @@ struct Settings {
     // Hardware
     bool nvidia = false;
     bool amd = false;
-    std::string steroDevice;
-    std::string mic;
+    std::string steroDevice = "";
+    std::string mic = "";
 
     // General
-    int fps;
-    std::string outputFolder;
+    int fps = NULL;
+    std::string outputFolder = "";
 };
 
 #endif

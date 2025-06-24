@@ -10,9 +10,9 @@ Element::~Element() {
 void Element::checkMouse(SDL_MouseButtonEvent* _lastMouse) {
     if (clickable && rendered) {
         if(_lastMouse->x >= rect->x && _lastMouse->x <= rect->x + rect->w
-            && _lastMouse->y >= rect->y && _lastMouse->y <= rect->y + rect->h) {
+            && _lastMouse->y >= rect->y && _lastMouse->y <= rect->y + rect->h)
                 clickCallback();
-        }
+
     }
 }
 
@@ -54,4 +54,8 @@ void Element::setRendered(bool _rendered) {
 
 SDL_FRect* Element::getRect() {
     return rect;
+}
+
+SDL_Renderer* Element::getRenderer() {
+    return renderer;
 }

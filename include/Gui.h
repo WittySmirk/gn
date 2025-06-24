@@ -11,8 +11,10 @@
 #include "Element.h"
 #include "MultiSelect.h"
 #include "Text.h"
+#include "Editor.h"
 
-#define BACKGROUND_COLOR SDL_Color {34, 32, 52, 0}
+// TODO: Work on color schemeing
+#define BACKGROUND_COLOR SDL_Color {0, 0, 0, 0}
 #define FOREGROUND_WHITE SDL_Color {226, 255, 211, 0}
 #define HIGHLIGHT_BLUE SDL_Color {21, 237, 198, 0}
 #define FOREGROUND_YELLOW SDL_Color {246, 236, 18, 0}
@@ -41,6 +43,8 @@ class Gui {
         bool quit = false;
 
         State state;
+
+        Editor* editor;
 
         SettingsE currentSetting;
 

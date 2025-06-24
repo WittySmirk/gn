@@ -52,6 +52,10 @@ bool Settings::readSettings() {
 }
 
 bool Settings::writeSettingsFile() {
+    if(steroDevice == "" || mic == "" || fps == NULL || outputFolder == "") {
+        return false;
+    }
+
     std::ofstream out("Settings");
     if(!out) {
         std::cerr << "output didn't work" << std::endl;

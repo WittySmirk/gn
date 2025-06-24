@@ -49,8 +49,13 @@ void MultiSelect::checkMouse(SDL_MouseButtonEvent* _lastMouse) {
 void MultiSelect::draw() {
     Text::draw();
 
-    for(Text* t : children) {
-        t->draw();
+    if(toggled) {
+        SDL_SetRenderDrawColor(renderer, BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, BACKGROUND_COLOR.a);
+        SDL_FRect nrect = {getRect()->x, getRect()->y + getRect()->h, getRect()->w, getRect()->h * children.size()};
+        SDL_RenderFillRect(renderer, &nrect);
+        for(Text* t : children) {
+            t->draw();
+        }
     }
 }
 

@@ -8,10 +8,14 @@ Easily record and trim clips and save to computer or upload to Google Drive
 - Win32
 
 ## Building
-```
-Get ffmpeg binaries with lib. Edit CMakeLists to the correct path of ffmpeg.
-Get SDL3 via this command git clone https://github.com/libsdl-org/SDL.git vendored/SDL
-Run cmake -S . -B build
+```bash
+# Get ffmpeg binaries with lib. Edit CMakeLists to the correct path of ffmpeg.
+# Get SDL3 via command:
+git clone https://github.com/libsdl-org/SDL.git vendored/SDL
+# GET SDL3_ttf via command:
+git clone --recursive https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
+# Run 
+cmake -S . -B build
 cmake --build build
 ```
 

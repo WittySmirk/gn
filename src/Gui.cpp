@@ -9,7 +9,7 @@ void Gui::spawn(Settings* _settings, bool _setup) {
     if (_setup) {
         state = State::SETUPSTAGE1;
     } else {
-        state = State::EDITING;
+        state = State::EDITINGSTAGE1;
     }
 
     openWindow();
@@ -22,8 +22,15 @@ void Gui::pickRightSetup() {
         case State::SETUPSTAGE3:
             createSetup();
         break;
-        case State::EDITING:
+        case State::EDITINGSTAGE1:
+            SDL_ShowOpenFileDialog(fileCallback, this, window, nullptr, 0, settings->outputFolder.c_str(), false);
+        break;
+        case State::EDITINGSTAGE2:
             editor = new Editor();
+            Element* e = new Element(renderer);
+            pipe.push_back(e);
+            editor->init(editFile, e);
+        break;
     }
 
 }
@@ -54,13 +61,6 @@ void Gui::openWindow() {
 
     pickRightSetup();
     
-    if (state == State::EDITING) {
-        Element* e = new Element(renderer);
-        pipe.push_back(e);
-        editor->init("C:\\Users\\wyatt\\Documents\\Programming\\gn\\captures\\1750389092.mp4", e);
-        editor->read();
-    }
-
     SDL_Event event;
     State lastKnownState = state;
 
@@ -92,6 +92,10 @@ void Gui::openWindow() {
             continue;
         }
 
+        if(state == State::EDITINGSTAGE2) {
+            editor->read();
+        }
+
         SDL_SetRenderDrawColor(renderer, BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, BACKGROUND_COLOR.a);
         SDL_RenderClear(renderer);
 
@@ -105,6 +109,10 @@ void Gui::openWindow() {
         }
 
         SDL_RenderPresent(renderer);
+    }
+
+    if(editor) {
+        editor->cleanup();
     }
 
     settings = nullptr;
@@ -229,6 +237,12 @@ void Gui::folderCallback(void* userData, const char* const* files, int filter) {
     }
 }
 
+void Gui::fileCallback(void* userData, const char* const* files, int filter) {
+    // TODO: handle closing or not picking file
+    Gui* self = static_cast<Gui*>(userData);
+    self->editFile = files[0];
+    self->state = State::EDITINGSTAGE2;
+}
 
 void Gui::kill() {
     quit = true;

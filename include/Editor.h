@@ -19,7 +19,8 @@ class Editor {
     public:
         Editor();
         void init(std::string _file, Element* _element);
-        void read();
+        bool read();
+        void cleanup();
     private:
         AVFormatContext* pFormatCtx = nullptr;
         AVCodecContext* pCodecCtx = nullptr;

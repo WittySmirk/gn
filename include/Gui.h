@@ -5,6 +5,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include "Settings.h"
 #include "Capture.h"
@@ -24,7 +25,8 @@ enum State {
     SETUPSTAGE1,
     SETUPSTAGE2,
     SETUPSTAGE3,
-    EDITING
+    EDITINGSTAGE1,
+    EDITINGSTAGE2
 };
 
 class Gui {
@@ -34,6 +36,7 @@ class Gui {
         void kill();
     private:
         static void folderCallback(void* userData, const char* const* files, int filter);
+        static void fileCallback(void* userData, const char* const* files, int filter);
         void openWindow();
         void createSetup();
         void pickRightSetup();
@@ -45,6 +48,7 @@ class Gui {
         State state;
 
         Editor* editor;
+        std::string editFile;
 
         SettingsE currentSetting;
 

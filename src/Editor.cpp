@@ -13,8 +13,7 @@ void Editor::init(std::string _file, Element* _element) {
         exit(1);
     }
 
-    av_dump_format(pFormatCtx, 0, _file.c_str(), 0); // Dumps to error (TODO: remove this later)
-    
+    // av_dump_format(pFormatCtx, 0, _file.c_str(), 0); // Dumps to error (TODO: remove this later)
 
     for(int i = 0; i < pFormatCtx->nb_streams; i++) {
         if(pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -80,16 +79,16 @@ void Editor::init(std::string _file, Element* _element) {
         SWS_BILINEAR, nullptr, nullptr, nullptr);
 }
 
-void Editor::read() {
+bool Editor::read() {
     int i = 0;
-    while(av_read_frame(pFormatCtx, &packet) >= 0) {
+    if (av_read_frame(pFormatCtx, &packet) >= 0) {
         if(packet.stream_index == videoStream) {
             if(avcodec_send_packet(pCodecCtx, &packet) < 0) {
                 std::cout << "Failed to send packet" << std::endl;
-                exit (1);
+                return false;
             }
 
-            while(avcodec_receive_frame(pCodecCtx, pFrame) == 0) {
+            if(avcodec_receive_frame(pCodecCtx, pFrame) == 0) {
                 sws_scale(sws_ctx, (uint8_t const* const*)pFrame->data,
                     pFrame->linesize, 0, pCodecCtx->height, 
                     pFrameRGB->data, pFrameRGB->linesize);
@@ -109,9 +108,14 @@ void Editor::read() {
                 }
             }
             av_packet_unref(&packet);
+            return true;
         }
     }
 
+    return false;
+}
+
+void Editor::cleanup() {
     av_free(buffer);
     av_frame_free(&pFrameRGB);
     av_frame_free(&pFrame);

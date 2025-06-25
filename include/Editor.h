@@ -5,7 +5,9 @@ extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
     #include <libswscale/swscale.h>
+    #include <libswresample/swresample.h>
     #include <libavutil/imgutils.h>
+    #include <libavutil/channel_layout.h>
 }
 
 #include <iostream>
@@ -26,15 +28,26 @@ class Editor {
         AVCodecContext* pCodecCtx = nullptr;
         const AVCodec* pCodec = nullptr;
 
+        AVFormatContext* aFormatCtx = nullptr;
+        AVCodecContext* aCodecCtx = nullptr;
+        const AVCodec* aCodec = nullptr;
+
+        SDL_AudioSpec aSpec;
+        SDL_AudioStream* aStream;
+
         int videoStream = -1;
+        int audioStream = -1;
         
+        AVFrame* aFrame = nullptr;
+
         AVFrame* pFrame = nullptr;
         AVFrame* pFrameRGB = nullptr;
         uint8_t*  buffer = nullptr;
 
         Element* element;
 
-        struct SwsContext* sws_ctx = nullptr;
+        struct SwsContext* swsCtx = nullptr;
+        struct SwrContext* swrCtx = nullptr;
         AVPacket packet;
 };
 

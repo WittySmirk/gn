@@ -160,10 +160,12 @@ bool Editor::read() {
 
                 SDL_UpdateTexture(text, nullptr, pFrameRGB->data[0], pFrameRGB->linesize[0]);
 
-                SDL_FRect* rect = new SDL_FRect{0,0, SCREEN_W, SCREEN_H};
+                double pts = packet.pts * av_q2d(pFormatCtx->streams[videoStream]->time_base);
 
-                element->setTexture(text);
+                videoQueue.push_back({text, pts});
+
                 if(element->getRect() == nullptr) {
+                    SDL_FRect* rect = new SDL_FRect{0,0, SCREEN_W, SCREEN_H};
                     element->setRect(rect);
                 }
             }
@@ -183,11 +185,13 @@ bool Editor::read() {
 
                 av_samples_alloc(&outBuf, &outLineSize, aSpec.channels, out_samples, AV_SAMPLE_FMT_S16, 0);
 
-                int converted_samples = swr_convert(swrCtx, &outBuf, out_samples, (const uint8_t**)aFrame->data, aFrame->nb_samples);
+                int convertedSamples = swr_convert(swrCtx, &outBuf, out_samples, (const uint8_t**)aFrame->data, aFrame->nb_samples);
 
-                int buffer_size = av_samples_get_buffer_size(NULL, aSpec.channels, converted_samples, AV_SAMPLE_FMT_S16, 1);
+                int bufferSize = av_samples_get_buffer_size(NULL, aSpec.channels, convertedSamples, AV_SAMPLE_FMT_S16, 1);
 
-                SDL_PutAudioStreamData(aStream, outBuf, buffer_size);
+                SDL_PutAudioStreamData(aStream, outBuf, bufferSize);
+
+                audioClock += (double)convertedSamples * aSpec.freq;
 
                 av_freep(&outBuf);
             }
@@ -199,11 +203,19 @@ bool Editor::read() {
     return false;
 }
 
+void Editor::renderVideo() {
+    if(!videoQueue.empty()) {
+        if(videoQueue[0].pts >= audioClock) {
+            element->setTexture(videoQueue[0].text);
+            videoQueue.erase(videoQueue.begin());
+        }
+    }
+}
+
 void Editor::cleanup() {
     av_free(buffer);
     av_frame_free(&pFrameRGB);
     av_frame_free(&pFrame);
     avcodec_close(pCodecCtx);
     avformat_close_input(&pFormatCtx);
-    
 }

@@ -14,14 +14,21 @@ extern "C" {
 #include <string>
 #include <fstream>
 #include <SDL3/SDL.h>
+#include <vector>
 
 #include "Element.h"
+
+struct VideoFrame {
+    SDL_Texture* text;
+    double pts;
+};
 
 class Editor {
     public:
         Editor();
         void init(std::string _file, Element* _element);
         bool read();
+        void renderVideo();
         void cleanup();
     private:
         AVFormatContext* pFormatCtx = nullptr;
@@ -38,6 +45,8 @@ class Editor {
         int videoStream = -1;
         int audioStream = -1;
         
+        double audioClock;
+
         AVFrame* aFrame = nullptr;
 
         AVFrame* pFrame = nullptr;
@@ -49,6 +58,8 @@ class Editor {
         struct SwsContext* swsCtx = nullptr;
         struct SwrContext* swrCtx = nullptr;
         AVPacket packet;
+
+        std::vector<VideoFrame> videoQueue;
 };
 
 #endif

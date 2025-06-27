@@ -15,7 +15,7 @@ void Editor::init(std::string _file, Element* _element) {
 
     // av_dump_format(pFormatCtx, 0, _file.c_str(), 0); // Dumps to error (TODO: remove this later)
 
-    for(int i = 0; i < pFormatCtx->nb_streams; i++) {
+    for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) {
         if(pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && videoStream < 0) {
             videoStream = i;
         }
@@ -77,7 +77,7 @@ void Editor::init(std::string _file, Element* _element) {
     aSpec.freq = aCodecCtx->sample_rate;
     aSpec.channels = aCodecCtx->ch_layout.nb_channels;
 
-    if(SDL_Init(SDL_INIT_AUDIO) < 0) {
+    if(!SDL_Init(SDL_INIT_AUDIO)) {
         std::cerr << "Could not init SDL audio: " << SDL_GetError() << std::endl;
         exit(1);
     }
@@ -178,7 +178,7 @@ bool Editor::read() {
                 uint8_t* outBuf = NULL;
                 int outLineSize;
 
-                int out_samples = av_rescale_rnd(
+                int out_samples = (int)av_rescale_rnd(
                     swr_get_delay(swrCtx, aCodecCtx->sample_rate) + aFrame->nb_samples,
                     aSpec.freq, aCodecCtx->sample_rate,
                     AV_ROUND_UP);
@@ -191,7 +191,7 @@ bool Editor::read() {
 
                 SDL_PutAudioStreamData(aStream, outBuf, bufferSize);
 
-                audioClock += (double)convertedSamples * aSpec.freq;
+                totalBytesQueued += bufferSize;
 
                 av_freep(&outBuf);
             }
@@ -203,9 +203,19 @@ bool Editor::read() {
     return false;
 }
 
+double Editor::getAudioClock() {
+    Uint32 bytesLeft = SDL_GetAudioStreamQueued(aStream);
+    Uint32 bytesPlayed = totalBytesQueued - bytesLeft;
+
+    int bitsPerSample = SDL_AUDIO_BITSIZE(aSpec.format) / 8;
+    double seconds = (double)bytesPlayed / (aSpec.channels * aSpec.freq * bitsPerSample);
+    return seconds;
+}
+
 void Editor::renderVideo() {
     if(!videoQueue.empty()) {
-        if(videoQueue[0].pts >= audioClock) {
+        if(videoQueue[0].pts <= getAudioClock()) {
+            // std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
             element->setTexture(videoQueue[0].text);
             videoQueue.erase(videoQueue.begin());
         }
@@ -216,6 +226,9 @@ void Editor::cleanup() {
     av_free(buffer);
     av_frame_free(&pFrameRGB);
     av_frame_free(&pFrame);
-    avcodec_close(pCodecCtx);
+    av_frame_free(&aFrame);
+    avcodec_free_context(&pCodecCtx);
+    avcodec_free_context(&aCodecCtx);
     avformat_close_input(&pFormatCtx);
+    avformat_close_input(&aFormatCtx);
 }

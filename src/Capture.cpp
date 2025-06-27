@@ -18,11 +18,11 @@ void Capture::startScreenRecord(std::string fileName, Settings* settings) {
  
     ss << "ffmpeg -f gdigrab -framerate " << settings->fps << " -i desktop " << "-f dshow -i audio=\"" << settings->steroDevice << "\" ";
     if (settings->nvidia)
-        ss << "-c:v h264_nvenc -qp 0 ";
+        ss << "-c:v h264_nvenc -preset slow -b:v 2500k -c:a aac -b:a 160k -movflags +faststart ";
     ss << fileName;
 
     std::string cmd = ss.str();
-    
+    std::cout << cmd << std::endl;
 
     if(!CreateProcess(NULL, (LPSTR)cmd.data(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &ffmpegProcess)) {
         std::cerr << "Failed to create process" << std::endl;

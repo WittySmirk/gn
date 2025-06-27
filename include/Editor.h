@@ -45,7 +45,8 @@ class Editor {
         int videoStream = -1;
         int audioStream = -1;
         
-        double audioClock;
+        double getAudioClock();
+        Uint32 totalBytesQueued = 0;
 
         AVFrame* aFrame = nullptr;
 

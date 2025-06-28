@@ -67,6 +67,13 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             if(wParam == START_STOP_ID) {
                 if (!recording) {
                     recording = true;
+                    std::time_t r = std::time(0);
+                    std::stringstream ss;
+                    ss << settings->outputFolder << r << ".mp4";
+                    std::cout << ss.str() << std::endl;
+                    capture->startScreenRecord(ss.str(), settings);
+                    /*
+                   
                     appThread = std::thread([this](){
                         std::time_t r = std::time(0);
                         std::stringstream ss;
@@ -74,10 +81,11 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                         std::cout << ss.str() << std::endl;
                         capture->startScreenRecord(ss.str(), settings);
                     });
+                    */
                 } else {
                     capture->endScreenRecord();
                     recording = false;
-                    if(appThread.joinable()) appThread.join();
+                    //if(appThread.joinable()) appThread.join();
                 }
                 return 0;
             }

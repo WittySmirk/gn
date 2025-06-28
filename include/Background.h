@@ -22,7 +22,7 @@ class Background {
         static LRESULT CALLBACK windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
         LRESULT handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
         
-        std::thread appThread;
+        // std::thread appThread;
         bool recording = false;
         bool guiOpen = false;
 

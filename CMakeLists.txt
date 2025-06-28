@@ -4,6 +4,7 @@ project(gn CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(FFMPEG_DIR "C:/Users/wyatt/OneDrive/Desktop/ffmpeg")
+set(LIBOBS_DIR "C:/Users/wyatt/OneDrive/Desktop/libobs")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
@@ -20,6 +21,7 @@ add_executable(gn ${SOURCES} ${HEADERS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE  
     ${FFMPEG_DIR}/include
+    ${LIBOBS_DIR}/include
     ${CMAKE_SOURCE_DIR}/include
 )
 
@@ -30,6 +32,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${FFMPEG_DIR}/lib/avdevice.lib
     ${FFMPEG_DIR}/lib/swscale.lib
     ${FFMPEG_DIR}/lib/swresample.lib
+    ${LIBOBS_DIR}/bin/64bit/obs.lib
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
     opengl32

@@ -2,6 +2,8 @@
 ## Minimalist clipping software without the bloat
 Easily record and trim clips and save to computer or upload to Google Drive
 
+<img src="./docs/screenshot.png" />
+
 ## Dependencies
 - FFMPEG (decoding & trimming)
 - libOBS (screen recording)

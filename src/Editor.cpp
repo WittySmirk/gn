@@ -301,6 +301,8 @@ void Editor::clearMarkers() {
 void Editor::exportClip() {
     if(gettingInput)
         return;
+    if(markerOne == -1.0 || markerOne == -1.0)
+        return;
     
     Input* input = new Input(renderer, font, "Enter Clip Name", 1.0f, 40); 
     children.push_back(input);

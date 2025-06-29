@@ -9,10 +9,9 @@
 #define SCREEN_H 720
 
 // TODO: Work on color schemeing
-#define BACKGROUND_COLOR SDL_Color {0, 0, 0, 0}
-#define FOREGROUND_WHITE SDL_Color {255, 255, 255, 0}
-#define HIGHLIGHT_BLUE SDL_Color {21, 237, 198, 0}
-#define FOREGROUND_YELLOW SDL_Color {246, 236, 18, 0}
+#define BACKGROUND SDL_Color {0, 0, 0, 0}
+#define FOREGROUND SDL_Color {255, 255, 255, 0}
+#define HIGHLIGHT SDL_Color {0, 174, 255, 0}
 
 class Element {
     public:
@@ -23,11 +22,19 @@ class Element {
 
         void setRect(SDL_FRect* _rect);
         void setTexture(SDL_Texture* _texture);
+        void setBorderColor(SDL_Color _borderColor);
         void setBackColor(SDL_Color _borderColor);
         void setButton(std::function<void()>);
         void setRendered(bool _rendered);
         
-        virtual bool hasOverlay() {return false;}
+        virtual bool hasOverlay() {return false;} // TODO: rework to not need this
+
+        // Input viruals
+        virtual bool getFocused() {return false;}
+        virtual void collectText(std::string _text) {}
+        virtual void deleteText() {}
+        virtual void clearText() {}
+        virtual std::string getText() {return "";}
 
         bool getRendered() { return rendered;}
         SDL_FRect* getRect();
@@ -38,9 +45,11 @@ class Element {
         bool clickable = false;
         bool button = false;
         bool rendered = true;
-        bool colorSet = false;
+        bool borderFilled = false;
+        bool backFilled = false;
         SDL_FRect* rect = nullptr;
         SDL_Texture* texture = nullptr;
+        SDL_Color borderColor;
         SDL_Color backColor;
         std::function<void()> clickCallback;
 };

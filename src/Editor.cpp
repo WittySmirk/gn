@@ -1,6 +1,21 @@
 #include "Editor.h"
 
-Editor::Editor(SDL_Renderer* _renderer): Element(_renderer) {}
+Editor::Editor(SDL_Renderer* _renderer, TTF_Font* _font): Element(_renderer), font(_font) {}
+
+Editor::~Editor() {
+    av_free(buffer);
+    av_frame_free(&pFrameRGB);
+    av_frame_free(&pFrame);
+    av_frame_free(&aFrame);
+    avcodec_free_context(&pCodecCtx);
+    avcodec_free_context(&aCodecCtx);
+    avformat_close_input(&pFormatCtx);
+    avformat_close_input(&aFormatCtx);
+
+    for(Element* e : children) {
+        delete e;
+    }
+}
 
 void Editor::init(std::string _file) {
     if(avformat_open_input(&pFormatCtx, _file.c_str(), nullptr, nullptr) < 0) {
@@ -147,7 +162,7 @@ void Editor::init(std::string _file) {
     Element* partialSeek = new Element(renderer);
     SDL_FRect* partialRect = new SDL_FRect{fullRect->x, fullRect->y, 0.0f, 0.0f};
     partialSeek->setRect(partialRect);
-    partialSeek->setBackColor(FOREGROUND_WHITE);
+    partialSeek->setBackColor(FOREGROUND);
     children.push_back(partialSeek);
 }
 
@@ -248,6 +263,9 @@ void Editor::renderVideo() {
 }
 
 void Editor::createMarker() {
+    if(gettingInput) {
+        return;
+    }
     if(!videoQueue.empty()) {
         if(markerOne == -1.0) {
             markerOne = videoQueue[0].pts;
@@ -255,7 +273,7 @@ void Editor::createMarker() {
             SDL_FRect* old = children[currentSeek]->getRect();
             SDL_FRect* nextRect = new SDL_FRect {old->x + old->w, old->y, 0.0, 0.0};
             nextSeek->setRect(nextRect);
-            nextSeek->setBackColor(HIGHLIGHT_BLUE);
+            nextSeek->setBackColor(HIGHLIGHT);
             children.push_back(nextSeek);
 
             currentSeek = 2;
@@ -267,6 +285,11 @@ void Editor::createMarker() {
 }
 
 void Editor::clearMarkers() {
+    if(gettingInput) {
+        children.pop_back();
+        gettingInput = false;
+        return;
+    }
     if(markerTwo != -1.0 || markerOne != -1.0) {
         children.pop_back();
         currentSeek = 1;
@@ -275,15 +298,26 @@ void Editor::clearMarkers() {
     }
 }
 
-void Editor::cleanup() {
-    av_free(buffer);
-    av_frame_free(&pFrameRGB);
-    av_frame_free(&pFrame);
-    av_frame_free(&aFrame);
-    avcodec_free_context(&pCodecCtx);
-    avcodec_free_context(&aCodecCtx);
-    avformat_close_input(&pFormatCtx);
-    avformat_close_input(&aFormatCtx);
+void Editor::exportClip() {
+    if(gettingInput)
+        return;
+    
+    Input* input = new Input(renderer, font, "Enter Clip Name", 1.0f, 40); 
+    children.push_back(input);
+    gettingInput = true;
+
+    input->setFocused(true);
+}
+
+void Editor::completeExport() {
+    if(!gettingInput)
+        return;
+    
+    std::string clipName = children.back()->getText();
+    children.pop_back();
+    gettingInput = false;
+
+    std::cout << clipName << std::endl;
 }
 
 // Overloads for Element
@@ -293,4 +327,20 @@ void Editor::draw() {
     for(Element* e : children) {
         e->draw();
     }
+}
+
+void Editor::collectText(std::string _text) {
+    if(gettingInput)
+        children.back()->collectText(_text);
+}
+
+void Editor::deleteText() {
+    children.back()->deleteText();
+}
+
+bool Editor::getFocused() {
+    if(gettingInput) {
+        return children.back()->getFocused();
+    }
+    return false;
 }

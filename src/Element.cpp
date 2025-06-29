@@ -19,13 +19,18 @@ void Element::checkMouse(SDL_MouseButtonEvent* _lastMouse) {
 void Element::draw() {
     if (rendered) {
         if(texture != nullptr) {
-                if (button) {
+                if (backFilled) {
                     SDL_SetRenderDrawColor(renderer, backColor.r, backColor.g, backColor.b, backColor.a);
+                    SDL_RenderFillRect(renderer, rect);
+                }
+                if (borderFilled) {
+                    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
                     SDL_RenderRect(renderer, rect);
                 }
                 SDL_RenderTexture(renderer, texture, nullptr, rect);
+                return;
         }
-        if (rect != nullptr && colorSet) {
+        if (rect != nullptr && backFilled) {
             SDL_SetRenderDrawColor(renderer, backColor.r, backColor.g, backColor.b, backColor.a);
             SDL_RenderFillRect(renderer, rect);
         }
@@ -44,8 +49,14 @@ void Element::setTexture(SDL_Texture* _texture) {
     }
     texture = _texture;
 }
+
+void Element::setBorderColor(SDL_Color _borderColor) {
+    borderFilled = true;
+    borderColor = _borderColor;
+}
+
 void Element::setBackColor(SDL_Color _backColor) {
-    colorSet = true;
+    backFilled = true;
     backColor = _backColor;
 }
 void Element::setButton(std::function<void()> _callback) {

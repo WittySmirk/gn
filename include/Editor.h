@@ -17,6 +17,7 @@ extern "C" {
 #include <vector>
 
 #include "Element.h"
+#include "Input.h"
 
 struct VideoFrame {
     SDL_Texture* text;
@@ -26,14 +27,21 @@ struct VideoFrame {
 // The screen itself will be this class, which has children for the timeline
 class Editor: public Element {
     public:
-        Editor(SDL_Renderer* _renderer);
+        Editor(SDL_Renderer* _renderer, TTF_Font* _font);
+        ~Editor();
         void init(std::string _file);
         bool read();
         void renderVideo();
         void createMarker();
         void clearMarkers();
-        void cleanup();
+        void exportClip();
+        void completeExport();
+
         void draw();
+        void collectText(std::string _text);
+        void deleteText();
+
+        bool getFocused();
     private:
         AVFormatContext* pFormatCtx = nullptr;
         AVCodecContext* pCodecCtx = nullptr;
@@ -69,7 +77,9 @@ class Editor: public Element {
         double markerOne = -1.0;
         double markerTwo = -1.0;
 
+        bool gettingInput = false; 
         int currentSeek = 1;
+        TTF_Font* font;
 };
 
 #endif

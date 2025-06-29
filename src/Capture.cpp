@@ -3,6 +3,7 @@
 Capture::Capture() {}
 
 void Capture::startScreenRecord(std::string _filename, Settings* _settings) {
+    // TODO: optimize OBS and settings
     obs_startup("en-US", nullptr, nullptr);
     obs_add_data_path("./data/libobs/");
     obs_add_module_path("./obs-plugins/64bit/", "./data/obs-plugins/%module%/");

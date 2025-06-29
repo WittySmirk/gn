@@ -1,9 +1,8 @@
 #include "Editor.h"
 
-Editor::Editor() {}
+Editor::Editor(SDL_Renderer* _renderer): Element(_renderer) {}
 
-void Editor::init(std::string _file, Element* _element) {
-    element = _element;
+void Editor::init(std::string _file) {
     if(avformat_open_input(&pFormatCtx, _file.c_str(), nullptr, nullptr) < 0) {
         std::cerr << "Could not open file" << std::endl;
         exit(1);
@@ -13,6 +12,7 @@ void Editor::init(std::string _file, Element* _element) {
         exit(1);
     }
 
+    videoDuration = (double)pFormatCtx->duration / AV_TIME_BASE; 
     // av_dump_format(pFormatCtx, 0, _file.c_str(), 0); // Dumps to error (TODO: remove this later)
 
     for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) {
@@ -136,6 +136,19 @@ void Editor::init(std::string _file, Element* _element) {
         pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt, 
         pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_YUV420P, 
         SWS_BILINEAR, nullptr, nullptr, nullptr);
+
+    Element* fullSeek = new Element(renderer);
+    SDL_FRect* fullRect = new SDL_FRect{SCREEN_W * 0.1, SCREEN_H * 0.9, SCREEN_W * 0.8, 25.0f};
+    fullSeek->setRect(fullRect);
+    SDL_Color softGray = SDL_Color{211, 211, 211, 255};
+    fullSeek->setBackColor(softGray);
+    children.push_back(fullSeek);
+
+    Element* partialSeek = new Element(renderer);
+    SDL_FRect* partialRect = new SDL_FRect{fullRect->x, fullRect->y, 0.0f, 0.0f};
+    partialSeek->setRect(partialRect);
+    partialSeek->setBackColor(FOREGROUND_WHITE);
+    children.push_back(partialSeek);
 }
 
 bool Editor::read() {
@@ -152,7 +165,7 @@ bool Editor::read() {
                 sws_scale(swsCtx, (uint8_t const* const*)pFrame->data,
                     pFrame->linesize, 0, pCodecCtx->height, 
                     pFrameRGB->data, pFrameRGB->linesize);
-                SDL_Texture* text = SDL_CreateTexture(element->getRenderer(), SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, pCodecCtx->width, pCodecCtx->height);
+                SDL_Texture* text = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, pCodecCtx->width, pCodecCtx->height);
                 if(!text) {
                     std::cerr << "Failed to create texture" << std::endl;
                     exit(1);
@@ -164,9 +177,9 @@ bool Editor::read() {
 
                 videoQueue.push_back({text, pts});
 
-                if(element->getRect() == nullptr) {
+                if(getRect() == nullptr) {
                     SDL_FRect* rect = new SDL_FRect{0,0, SCREEN_W, SCREEN_H};
-                    element->setRect(rect);
+                    setRect(rect);
                 }
             }
         } else if (packet.stream_index == audioStream) {
@@ -215,10 +228,50 @@ double Editor::getAudioClock() {
 void Editor::renderVideo() {
     if(!videoQueue.empty()) {
         if(videoQueue[0].pts <= getAudioClock()) {
-            // std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
-            element->setTexture(videoQueue[0].text);
+            //std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
+            setTexture(videoQueue[0].text);
             videoQueue.erase(videoQueue.begin());
+
+            double percentage = videoQueue[0].pts / videoDuration;
+            SDL_FRect* full = children[0]->getRect();
+            if(currentSeek == 1) {
+                SDL_FRect* newPartial = new SDL_FRect {full->x, full->y, full->w * (float)percentage, full->h};
+                children[currentSeek]->setRect(newPartial);
+                return;
+            }
+            SDL_FRect* last = children[currentSeek-1]->getRect();
+            float newW = (full->w * (float)percentage) - last->w;
+            SDL_FRect* newPartial = new SDL_FRect {last->x + last->w, last->y, newW, last->h};
+            children[currentSeek]->setRect(newPartial);
         }
+    }
+}
+
+void Editor::createMarker() {
+    if(!videoQueue.empty()) {
+        if(markerOne == -1.0) {
+            markerOne = videoQueue[0].pts;
+            Element* nextSeek = new Element(renderer);
+            SDL_FRect* old = children[currentSeek]->getRect();
+            SDL_FRect* nextRect = new SDL_FRect {old->x + old->w, old->y, 0.0, 0.0};
+            nextSeek->setRect(nextRect);
+            nextSeek->setBackColor(HIGHLIGHT_BLUE);
+            children.push_back(nextSeek);
+
+            currentSeek = 2;
+        } else if(markerTwo == -1.0) {
+            markerTwo = videoQueue[0].pts;
+            currentSeek = 1;
+        }
+    }
+}
+
+void Editor::clearMarkers() {
+    if(markerTwo != -1.0 || markerOne != -1.0) {
+        children.pop_back();
+        currentSeek = 1;
+        markerOne = -1.0;
+        markerTwo = -1.0;
     }
 }
 
@@ -231,4 +284,13 @@ void Editor::cleanup() {
     avcodec_free_context(&aCodecCtx);
     avformat_close_input(&pFormatCtx);
     avformat_close_input(&aFormatCtx);
+}
+
+// Overloads for Element
+void Editor::draw() {
+    Element::draw();
+
+    for(Element* e : children) {
+        e->draw();
+    }
 }

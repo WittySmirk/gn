@@ -14,12 +14,6 @@
 #include "Text.h"
 #include "Editor.h"
 
-// TODO: Work on color schemeing
-#define BACKGROUND_COLOR SDL_Color {0, 0, 0, 0}
-#define FOREGROUND_WHITE SDL_Color {226, 255, 211, 0}
-#define HIGHLIGHT_BLUE SDL_Color {21, 237, 198, 0}
-#define FOREGROUND_YELLOW SDL_Color {246, 236, 18, 0}
-
 enum State {
     SETTINGS,
     SETUPSTAGE1,
@@ -33,7 +27,7 @@ class Gui {
     public:
         Gui();
         void spawn(Settings* _settings, bool _setup = false);
-        void kill();
+        void kill(); // TODO: link background and gui for safety/better
     private:
         static void folderCallback(void* userData, const char* const* files, int filter);
         static void fileCallback(void* userData, const char* const* files, int filter);

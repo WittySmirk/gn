@@ -23,13 +23,17 @@ struct VideoFrame {
     double pts;
 };
 
-class Editor {
+// The screen itself will be this class, which has children for the timeline
+class Editor: public Element {
     public:
-        Editor();
-        void init(std::string _file, Element* _element);
+        Editor(SDL_Renderer* _renderer);
+        void init(std::string _file);
         bool read();
         void renderVideo();
+        void createMarker();
+        void clearMarkers();
         void cleanup();
+        void draw();
     private:
         AVFormatContext* pFormatCtx = nullptr;
         AVCodecContext* pCodecCtx = nullptr;
@@ -42,6 +46,7 @@ class Editor {
         SDL_AudioSpec aSpec;
         SDL_AudioStream* aStream;
 
+        double videoDuration = 0.0;
         int videoStream = -1;
         int audioStream = -1;
         
@@ -54,13 +59,17 @@ class Editor {
         AVFrame* pFrameRGB = nullptr;
         uint8_t*  buffer = nullptr;
 
-        Element* element;
-
         struct SwsContext* swsCtx = nullptr;
         struct SwrContext* swrCtx = nullptr;
         AVPacket packet;
 
         std::vector<VideoFrame> videoQueue;
+        std::vector<Element*> children;
+
+        double markerOne = -1.0;
+        double markerTwo = -1.0;
+
+        int currentSeek = 1;
 };
 
 #endif

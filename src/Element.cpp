@@ -20,10 +20,14 @@ void Element::draw() {
     if (rendered) {
         if(texture != nullptr) {
                 if (button) {
-                    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+                    SDL_SetRenderDrawColor(renderer, backColor.r, backColor.g, backColor.b, backColor.a);
                     SDL_RenderRect(renderer, rect);
                 }
                 SDL_RenderTexture(renderer, texture, nullptr, rect);
+        }
+        if (rect != nullptr && colorSet) {
+            SDL_SetRenderDrawColor(renderer, backColor.r, backColor.g, backColor.b, backColor.a);
+            SDL_RenderFillRect(renderer, rect);
         }
     }
 }
@@ -41,7 +45,8 @@ void Element::setTexture(SDL_Texture* _texture) {
     texture = _texture;
 }
 void Element::setBackColor(SDL_Color _backColor) {
-    borderColor = _backColor;
+    colorSet = true;
+    backColor = _backColor;
 }
 void Element::setButton(std::function<void()> _callback) {
     button = true;

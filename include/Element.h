@@ -8,6 +8,12 @@
 #define SCREEN_W 1280
 #define SCREEN_H 720
 
+// TODO: Work on color schemeing
+#define BACKGROUND_COLOR SDL_Color {0, 0, 0, 0}
+#define FOREGROUND_WHITE SDL_Color {255, 255, 255, 0}
+#define HIGHLIGHT_BLUE SDL_Color {21, 237, 198, 0}
+#define FOREGROUND_YELLOW SDL_Color {246, 236, 18, 0}
+
 class Element {
     public:
         Element(SDL_Renderer* _renderer);
@@ -32,9 +38,10 @@ class Element {
         bool clickable = false;
         bool button = false;
         bool rendered = true;
+        bool colorSet = false;
         SDL_FRect* rect = nullptr;
         SDL_Texture* texture = nullptr;
-        SDL_Color borderColor;
+        SDL_Color backColor;
         std::function<void()> clickCallback;
 };
 

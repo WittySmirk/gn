@@ -3,7 +3,6 @@
 Gui::Gui() {}
 
 void Gui::spawn(Settings* _settings, bool _setup) {
-    quit = false;
     settings = _settings;
     // TODO: better state management
     if (_setup) {
@@ -26,10 +25,9 @@ void Gui::pickRightSetup() {
             SDL_ShowOpenFileDialog(fileCallback, this, window, nullptr, 0, settings->outputFolder.c_str(), false);
         break;
         case State::EDITINGSTAGE2:
-            editor = new Editor();
-            Element* e = new Element(renderer);
-            pipe.push_back(e);
-            editor->init(editFile, e);
+            editor = new Editor(renderer);
+            pipe.push_back(editor);
+            editor->init(editFile);
         break;
     }
 
@@ -70,8 +68,11 @@ void Gui::openWindow() {
                 quit = true;
             }
             if (event.type == SDL_EVENT_KEY_DOWN) {
+                if(event.key.key == SDLK_M) {
+                    editor->createMarker();
+                }
                 if(event.key.key == SDLK_ESCAPE) {
-                    quit = true;
+                    editor->clearMarkers();
                 }
             }
             if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {

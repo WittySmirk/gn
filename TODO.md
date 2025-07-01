@@ -1,0 +1,15 @@
+# What needs to be done before 1.0
+- Fix dependencies/debloat
+    - Right now theres multiple versions of ffmpeg included, and libobs is fully built, not trimmed
+- UI Icons on editor
+    - Actual X - buttons
+    - Dedicated settings page
+- Fix seeking
+    - Multithreading?
+    - At least make it not block main
+- Fix first time setup
+    - Fix crashing after first time
+- Windows Stuff
+    - System tray icon for bg app
+        - Close or open gui
+    - Icon for gui app

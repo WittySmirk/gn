@@ -102,9 +102,11 @@ void Gui::openWindow() {
                             editor->setPaused(!editor->getPaused());
                             break;
                         case SDLK_LEFT:
+                        case SDLK_H:
                             editor->seek(-1.0);
                             break;
                         case SDLK_RIGHT:
+                        case SDLK_L:
                             editor->seek(1.0);
                             break;
                     }

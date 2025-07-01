@@ -167,7 +167,6 @@ void Editor::init(std::string _file) {
 }
 
 bool Editor::read() {
-    int i = 0;
     SDL_ResumeAudioStreamDevice(aStream);
     if (av_read_frame(pFormatCtx, &packet) >= 0) {
         if(packet.stream_index == videoStream) {
@@ -175,7 +174,6 @@ bool Editor::read() {
                 std::cout << "Failed to send packet" << std::endl;
                 return false;
             }
-
             if(avcodec_receive_frame(pCodecCtx, pFrame) == 0) {
                 sws_scale(swsCtx, (uint8_t const* const*)pFrame->data,
                     pFrame->linesize, 0, pCodecCtx->height, 
@@ -227,7 +225,6 @@ bool Editor::read() {
         av_packet_unref(&packet);
         return true;
     }
-
     return false;
 }
 
@@ -326,34 +323,62 @@ void Editor::completeExport() {
 
 void Editor::seek(double _offSeconds) {
     AVStream* vStream = pFormatCtx->streams[videoStream];
-
-    double pts = videoQueue.empty() ? 0.0 : videoQueue[0].pts;
-    double target = std::max(0.0, videoQueue[0].pts + _offSeconds);
-
+    double current = videoQueue.empty() ? getAudioClock() : videoQueue[0].pts;
+    double target = std::max(0.0, current + _offSeconds);
     int64_t seekTarget = target / av_q2d(vStream->time_base);
 
-    if(av_seek_frame(pFormatCtx, videoStream, seekTarget, AVSEEK_FLAG_BACKWARD) < 0) {
+    if (av_seek_frame(pFormatCtx, videoStream, seekTarget, AVSEEK_FLAG_BACKWARD) < 0) {
         std::cerr << "Seek failed to " << target << std::endl;
         return;
     }
 
     avcodec_flush_buffers(pCodecCtx);
-    
     avcodec_flush_buffers(aCodecCtx);
     SDL_ClearAudioStream(aStream);
+    totalBytesQueued = 0;
+    audioClockBase = target;
+    setTexture(nullptr);
 
-    int bitsPerSample = SDL_AUDIO_BITSIZE(aSpec.format) / 8;
-    audioClockBase = getAudioClock() - target;
-    totalBytesQueued = 0; 
-
+    for (VideoFrame& f : videoQueue)
+        SDL_DestroyTexture(f.text);
     videoQueue.clear();
+
     av_frame_unref(pFrame);
     av_packet_unref(&packet);
 
-    std::cout << "Seekeed to " << target << std::endl;
+    bool found = false;
+    const double EPS = 0.01; // Allow minor float error
+    while (!found && av_read_frame(pFormatCtx, &packet) >= 0) {
+        if (packet.stream_index == videoStream) {
+            if (avcodec_send_packet(pCodecCtx, &packet) >= 0 &&
+                avcodec_receive_frame(pCodecCtx, pFrame) == 0) {
+
+                double framePts = pFrame->pts * av_q2d(vStream->time_base);
+                if (framePts + EPS >= target) {
+                    // Convert and show this frame
+                    sws_scale(swsCtx, (uint8_t const* const*)pFrame->data,
+                        pFrame->linesize, 0, pCodecCtx->height,
+                        pFrameRGB->data, pFrameRGB->linesize);
+
+                    SDL_Texture* text = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, pCodecCtx->width, pCodecCtx->height);
+                    SDL_UpdateTexture(text, nullptr, pFrameRGB->data[0], pFrameRGB->linesize[0]);
+
+                    setTexture(text); // Show this frame immediately
+                    videoQueue.push_back({text, framePts});
+                    found = true;
+                }
+            }
+        }
+        av_packet_unref(&packet);
+    }
+
+    int preload = 5;
+    while (preload-- > 0 && read()) {}
+
+    std::cout << "Seeked to " << target << std::endl;
 }
-    
-// Overloads for Element
+
+// Overloads for element
 void Editor::draw() {
     Element::draw();
 

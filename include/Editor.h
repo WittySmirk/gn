@@ -15,6 +15,7 @@ extern "C" {
 #include <fstream>
 #include <SDL3/SDL.h>
 #include <vector>
+#include <thread>
 
 #include "Element.h"
 #include "Input.h"
@@ -46,6 +47,7 @@ class Editor: public Element {
         bool getPaused();
         void setPaused(bool _paused);
     private:
+        void finishSeek(double _target);
         AVFormatContext* pFormatCtx = nullptr;
         AVCodecContext* pCodecCtx = nullptr;
         const AVCodec* pCodec = nullptr;
@@ -84,7 +86,10 @@ class Editor: public Element {
         bool gettingInput = false; 
         int currentSeek = 1;
         TTF_Font* font;
+
+        std::atomic<bool> seeking = false;
         bool paused = false;
+        std::thread seekThread;
 };
 
 #endif

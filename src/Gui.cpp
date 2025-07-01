@@ -22,6 +22,7 @@ void Gui::pickRightSetup() {
             createSetup();
         break;
         case State::EDITINGSTAGE1:
+        std::cout << settings->outputFolder << std::endl;
             SDL_ShowOpenFileDialog(fileCallback, this, window, nullptr, 0, settings->outputFolder.c_str(), false);
         break;
         case State::EDITINGSTAGE2:
@@ -87,7 +88,6 @@ void Gui::openWindow() {
                             }
                             editor->clearMarkers();
                             break;
-
                         case SDLK_BACKSPACE:
                             for(Element* e : pipe) {
                                 if(e->getFocused()) {
@@ -95,9 +95,17 @@ void Gui::openWindow() {
                                 }
                             }
                             break;
-
                         case SDLK_RETURN:
                             editor->completeExport();
+                            break;
+                        case SDLK_SPACE:
+                            editor->setPaused(!editor->getPaused());
+                            break;
+                        case SDLK_LEFT:
+                            editor->seek(-1.0);
+                            break;
+                        case SDLK_RIGHT:
+                            editor->seek(1.0);
                             break;
                     }
                 }
@@ -121,7 +129,7 @@ void Gui::openWindow() {
             continue;
         }
 
-        if(state == State::EDITINGSTAGE2) {
+        if(state == State::EDITINGSTAGE2 && !editor->getPaused()) {
             editor->read();
             editor->renderVideo();
         }
@@ -177,35 +185,31 @@ void Gui::createSetup() {
             pipe.push_back(t1);
 
             Text* t2 = new Text(renderer, font, "Pick Capture Location", padding, t1->getRect()->y + t1->getRect()->h + padding, 34, FOREGROUND);
-            t2->setButton([this, t2](){
+            t2->setButton([this](){
                 currentSetting = SettingsE::OUTPUTFOLDER;
                 SDL_ShowOpenFolderDialog(folderCallback, this, window, nullptr, false);
             });
             t2->setBorderColor(HIGHLIGHT);
             pipe.push_back(t2);
 
+            Text* t3 = new Text(renderer, font, "Pick Clips Location", padding, t2->getRect()->y + t2->getRect()->h + padding, 34, FOREGROUND);
+            t3->setButton([this]() {
+                currentSetting = SettingsE::CLIPSFOLDER;
+                SDL_ShowOpenFolderDialog(folderCallback, this, window, nullptr, false);
+            });
+            t3->setBorderColor(HIGHLIGHT);
+            pipe.push_back(t3);
+
             MultiSelect* m = new MultiSelect(renderer, font, "Select fps", std::vector<MultiItem>{
                 MultiItem{"30 fps", [this](){settings->fps = 30;}},
                 MultiItem{"60 fps", [this](){settings->fps = 60;}},
                 MultiItem{"120 fps", [this](){settings->fps = 120;}}
             }, 
-                padding, t2->getRect()->y + t2->getRect()->h + padding);
+                padding, t3->getRect()->y + t3->getRect()->h + padding);
             pipe.push_back(m);
 
-            std::vector<MultiItem> audioItems;
-            std::vector<std::string> devices = settings->findAudioDevices();
-            for(std::string& s : devices) {
-                MultiItem i = {s, [s, this](){
-                    settings->steroDevice = s;
-                    std::cout << settings->steroDevice << std::endl;
-                }};
-                audioItems.push_back(i);
-            }
-
-            MultiSelect* m2 = new MultiSelect(renderer, font, "Select Stereo Device", audioItems, padding, m->getRect()->y + m->getRect()->h + padding);
-            pipe.push_back(m2);
-            
-            // Have to change the lambdas for setting mic
+            /*
+            std::vector<std::string> audioItems;
             audioItems.clear();
             for(std::string& s : devices) {
                 MultiItem i = {s, [s, this](){
@@ -217,6 +221,7 @@ void Gui::createSetup() {
 
             MultiSelect* m3 = new MultiSelect(renderer, font, "Select Mic", audioItems, padding, m2->getRect()->y + m->getRect()->h + padding);
             pipe.push_back(m3);
+            */
 
             std::string gpu;
             if (settings->amd) {
@@ -227,25 +232,24 @@ void Gui::createSetup() {
                 gpu = "No gpu detected";
             }
 
-            Text* t3 = new Text(renderer, font, gpu, padding, SCREEN_H - padding * 2, 34, HIGHLIGHT);
-            pipe.push_back(t3);
+            Text* t4 = new Text(renderer, font, gpu, padding, SCREEN_H - padding * 2, 34, HIGHLIGHT);
+            pipe.push_back(t4);
 
 
-            Text* error = new Text(renderer, font, "Please set all before finishing setup", padding, t3->getRect()->y - t3->getRect()->h - padding, 34, FOREGROUND);
+            Text* error = new Text(renderer, font, "Please set all before finishing setup", padding, t4->getRect()->y - t4->getRect()->h - padding, 34, FOREGROUND);
             error->setRendered(false);
             pipe.push_back(error);
 
-            Text* t4 = new Text(renderer, font, "Finished", padding, m3->getRect()->y + m3->getRect()->h + padding, 34, FOREGROUND);
-            t4->setBorderColor(HIGHLIGHT);
-            t4->setButton([this, error](){
+            Text* t5 = new Text(renderer, font, "Finished", padding, m->getRect()->y + m->getRect()->h + padding, 34, FOREGROUND);
+            t5->setBorderColor(HIGHLIGHT);
+            t5->setButton([this, error](){
                 if(!settings->writeSettingsFile()) {
                     error->setRendered(true);
                     return;
                 }
-                quit = true;
+                kill();
             });
-            pipe.push_back(t4);
-
+            pipe.push_back(t5);
 
             break;
         }
@@ -255,13 +259,16 @@ void Gui::createSetup() {
 void Gui::folderCallback(void* userData, const char* const* files, int filter) {
     // TODO: handle closing or not picking folder
     Gui* self = static_cast<Gui*>(userData);
-    if (self->currentSetting = SettingsE::OUTPUTFOLDER) {
         std::stringstream ss;
         ss << files[0];
         ss << "\\";
 
+    if (self->currentSetting == SettingsE::OUTPUTFOLDER) {
+        std::cout << "set out folder" << std::endl;
         self->settings->outputFolder = ss.str();
-        std::cout << self->settings->outputFolder << std::endl;
+    } else if (self->currentSetting == SettingsE::CLIPSFOLDER) {
+        std::cout << "set clips folder" << std::endl;
+        self->settings->clipsFolder = ss.str();
     }
 }
 

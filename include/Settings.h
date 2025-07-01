@@ -16,10 +16,10 @@
 enum SettingsE {
     NVIDIA,
     AMD,
-    STEREODEVICE,
-    MIC,
+    // MIC,
     FPS,
-    OUTPUTFOLDER
+    OUTPUTFOLDER,
+    CLIPSFOLDER,
 };
 
 struct Settings {
@@ -27,18 +27,17 @@ struct Settings {
     
     bool readSettings();
     bool writeSettingsFile();
-    void detectGPU();
-    std::vector<std::string> findAudioDevices();
+    void detectGPU(); // Not sure if this is needed
 
     // Hardware
     bool nvidia = false;
     bool amd = false;
-    std::string steroDevice = "";
-    std::string mic = "";
+    //std::string mic = "";
 
     // General
     int fps = NULL;
     std::string outputFolder = "";
+    std::string clipsFolder = ""; 
 };
 
 #endif

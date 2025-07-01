@@ -233,21 +233,23 @@ bool Editor::read() {
 
 double Editor::getAudioClock() {
     Uint32 bytesLeft = SDL_GetAudioStreamQueued(aStream);
-    Uint32 bytesPlayed = totalBytesQueued - bytesLeft;
+    Uint32 bytesPlayed = totalBytesQueued > bytesLeft ? totalBytesQueued - bytesLeft : 0;
+    //Uint32 bytesPlayed = totalBytesQueued - bytesLeft;
 
     int bitsPerSample = SDL_AUDIO_BITSIZE(aSpec.format) / 8;
     double seconds = (double)bytesPlayed / (aSpec.channels * aSpec.freq * bitsPerSample);
-    return seconds;
+    return audioClockBase + seconds;
 }
 
 void Editor::renderVideo() {
     if(!videoQueue.empty()) {
         if(videoQueue[0].pts <= getAudioClock()) {
-            //std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
+            std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
             setTexture(videoQueue[0].text);
+            double pts = videoQueue[0].pts;
             videoQueue.erase(videoQueue.begin());
 
-            double percentage = videoQueue[0].pts / videoDuration;
+            double percentage = pts / videoDuration;
             SDL_FRect* full = children[0]->getRect();
             if(currentSeek == 1) {
                 SDL_FRect* newPartial = new SDL_FRect {full->x, full->y, full->w * (float)percentage, full->h};
@@ -301,7 +303,7 @@ void Editor::clearMarkers() {
 void Editor::exportClip() {
     if(gettingInput)
         return;
-    if(markerOne == -1.0 || markerOne == -1.0)
+    if(markerOne == -1.0 || markerTwo == -1.0)
         return;
     
     Input* input = new Input(renderer, font, "Enter Clip Name", 1.0f, 40); 
@@ -322,6 +324,35 @@ void Editor::completeExport() {
     std::cout << clipName << std::endl;
 }
 
+void Editor::seek(double _offSeconds) {
+    AVStream* vStream = pFormatCtx->streams[videoStream];
+
+    double pts = videoQueue.empty() ? 0.0 : videoQueue[0].pts;
+    double target = std::max(0.0, videoQueue[0].pts + _offSeconds);
+
+    int64_t seekTarget = target / av_q2d(vStream->time_base);
+
+    if(av_seek_frame(pFormatCtx, videoStream, seekTarget, AVSEEK_FLAG_BACKWARD) < 0) {
+        std::cerr << "Seek failed to " << target << std::endl;
+        return;
+    }
+
+    avcodec_flush_buffers(pCodecCtx);
+    
+    avcodec_flush_buffers(aCodecCtx);
+    SDL_ClearAudioStream(aStream);
+
+    int bitsPerSample = SDL_AUDIO_BITSIZE(aSpec.format) / 8;
+    audioClockBase = getAudioClock() - target;
+    totalBytesQueued = 0; 
+
+    videoQueue.clear();
+    av_frame_unref(pFrame);
+    av_packet_unref(&packet);
+
+    std::cout << "Seekeed to " << target << std::endl;
+}
+    
 // Overloads for Element
 void Editor::draw() {
     Element::draw();
@@ -345,4 +376,14 @@ bool Editor::getFocused() {
         return children.back()->getFocused();
     }
     return false;
+}
+
+bool Editor::getPaused() {
+    return paused;
+}
+
+void Editor::setPaused(bool _paused) {
+    if(_paused)
+        SDL_PauseAudioStreamDevice(aStream);
+    paused = _paused;
 }

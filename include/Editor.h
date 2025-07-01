@@ -36,12 +36,15 @@ class Editor: public Element {
         void clearMarkers();
         void exportClip();
         void completeExport();
+        void seek(double _offSeconds);
 
         void draw();
         void collectText(std::string _text);
         void deleteText();
 
         bool getFocused();
+        bool getPaused();
+        void setPaused(bool _paused);
     private:
         AVFormatContext* pFormatCtx = nullptr;
         AVCodecContext* pCodecCtx = nullptr;
@@ -59,6 +62,7 @@ class Editor: public Element {
         int audioStream = -1;
         
         double getAudioClock();
+        double audioClockBase = 0;
         Uint32 totalBytesQueued = 0;
 
         AVFrame* aFrame = nullptr;
@@ -80,6 +84,7 @@ class Editor: public Element {
         bool gettingInput = false; 
         int currentSeek = 1;
         TTF_Font* font;
+        bool paused = false;
 };
 
 #endif

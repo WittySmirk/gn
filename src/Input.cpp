@@ -26,7 +26,6 @@ void Input::deleteText() {
 }
 
 void Input::clearText() {
-    std::cout << "clear text" << std::endl;
     text = "";
     renderText(notion);
 }

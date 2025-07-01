@@ -14,6 +14,7 @@ int main() {
     Settings settings;
     if(!settings.readSettings()) {
         gui.spawn(&settings, true);
+        return 0;
     }
 
     Background background(&settings, &capture, &gui);

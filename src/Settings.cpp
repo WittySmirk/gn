@@ -3,6 +3,7 @@
 Settings::Settings() {}
 
 bool Settings::readSettings() {
+    // TODO: If settings detected to not be right format delete and start over
     std::ifstream in("Settings");
     if(!in) {
         return false;
@@ -35,13 +36,12 @@ bool Settings::readSettings() {
             switch(type) {
                 case 0: afterS >> nvidia; break;
                 case 1: afterS >> amd; break;
-                case 2: steroDevice = afterS.str(); break;
-                case 3: mic = afterS.str(); break;
             }
         } else {
             switch(type) {
                 case 0: afterS >> fps; break;
                 case 1: outputFolder = afterS.str(); break;
+                case 2: clipsFolder = afterS.str(); break;
             }
         }
 
@@ -52,10 +52,10 @@ bool Settings::readSettings() {
 }
 
 bool Settings::writeSettingsFile() {
-    if(steroDevice == "" || mic == "" || fps == NULL || outputFolder == "") {
+std::cout << "FPS: " << fps << "OUT FOLDER: " << outputFolder << "CLIPSFOLDER: " << clipsFolder;
+    if(fps == NULL || outputFolder == "" || clipsFolder == "")
         return false;
-    }
-
+    
     std::ofstream out("Settings");
     if(!out) {
         std::cerr << "output didn't work" << std::endl;
@@ -65,12 +65,12 @@ bool Settings::writeSettingsFile() {
     out << "[HARDWARE]" << std::endl;
     out << "nvidia=" << nvidia << std::endl;
     out << "amd=" << amd << std::endl;
-    out << "stereoDevice=" << steroDevice << std::endl;
-    out << "mic=" << mic << std::endl;
+    //out << "mic=" << mic << std::endl;
     out << "\n";
     out << "[SETTINGS]" << std::endl;
     out << "fps=" << fps << std::endl;
     out << "outputFolder=" << outputFolder << std::endl;
+    out << "clipsFolder=" << clipsFolder << std::endl;
     
     out.close();
     return true;
@@ -101,42 +101,4 @@ void Settings::detectGPU() {
 
     SDL_GL_DestroyContext(context);
     SDL_DestroyWindow(window);
-}
-
-std::vector<std::string> Settings::findAudioDevices() {
-    std::array<char, 128> buffer;
-    
-    std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen("ffmpeg -list_devices true -f dshow -i dummy 2>&1", "r"), _pclose);
-    if(!pipe) {
-        std::cerr << "could not run ffmpeg command for devices" << std::endl;
-        exit(1);
-    }
-
-    std::string line;
-
-    std::vector<std::string> result;
-    while(fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        line = buffer.data();
-        std::string valuable = "";
-
-        bool insideQuotes = false;
-
-        if(line.find("audio") != std::string::npos) {
-            for(char& c : line) {
-                if(c == '"') {
-                    if (!insideQuotes) {
-                        insideQuotes = true;
-                        continue;
-                    }
-                    result.push_back(valuable);
-                    break;
-                }
-                if(insideQuotes) {
-                    valuable += c;
-                }
-            }
-        }
-    }
-
-    return result;
 }

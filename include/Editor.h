@@ -8,6 +8,7 @@ extern "C" {
     #include <libswresample/swresample.h>
     #include <libavutil/imgutils.h>
     #include <libavutil/channel_layout.h>
+    #include <libavcodec/bsf.h>
 }
 
 #include <iostream>
@@ -17,6 +18,7 @@ extern "C" {
 #include <vector>
 #include <thread>
 
+#include "Settings.h"
 #include "Element.h"
 #include "Input.h"
 
@@ -28,7 +30,7 @@ struct VideoFrame {
 // The screen itself will be this class, which has children for the timeline
 class Editor: public Element {
     public:
-        Editor(SDL_Renderer* _renderer, TTF_Font* _font);
+        Editor(SDL_Renderer* _renderer, TTF_Font* _font, Settings* _settings);
         ~Editor();
         void init(std::string _file);
         bool read();
@@ -90,6 +92,8 @@ class Editor: public Element {
         std::atomic<bool> seeking = false;
         bool paused = false;
         std::thread seekThread;
+
+        Settings* settings;
 };
 
 #endif

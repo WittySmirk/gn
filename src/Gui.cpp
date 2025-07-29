@@ -26,7 +26,7 @@ void Gui::pickRightSetup() {
             SDL_ShowOpenFileDialog(fileCallback, this, window, nullptr, 0, settings->outputFolder.c_str(), false);
         break;
         case State::EDITINGSTAGE2:
-            editor = new Editor(renderer, font);
+            editor = new Editor(renderer, font, settings);
             pipe.push_back(editor);
             editor->init(editFile);
         break;
@@ -75,40 +75,44 @@ void Gui::openWindow() {
             }
             if (state == State::EDITINGSTAGE2) {
                 if (event.type == SDL_EVENT_KEY_DOWN) {
-                    switch(event.key.key) {
-                        case SDLK_E:
-                            editor->exportClip();
-                            break;
-                        case SDLK_M:
-                            editor->createMarker();
-                            break;
-                        case SDLK_ESCAPE:
-                            if(editor->getFocused()){
+                    if(SDL_TextInputActive(window)) {
+                        switch(event.key.key) {
+                            case SDLK_ESCAPE:
                                 SDL_StopTextInput(window);
-                            }
-                            editor->clearMarkers();
-                            break;
-                        case SDLK_BACKSPACE:
-                            for(Element* e : pipe) {
-                                if(e->getFocused()) {
+                                editor->clearMarkers();
+                                break;
+                            case SDLK_BACKSPACE:
+                                for(Element* e : pipe) {
                                     e->deleteText();
                                 }
-                            }
+                                break;
+                            case SDLK_RETURN:
+                                editor->completeExport();
+                                break;
+                        }
+                    } else {
+                        switch(event.key.key) {
+                            case SDLK_E:
+                                editor->exportClip();
                             break;
-                        case SDLK_RETURN:
-                            editor->completeExport();
-                            break;
-                        case SDLK_SPACE:
-                            editor->setPaused(!editor->getPaused());
-                            break;
-                        case SDLK_LEFT:
-                        case SDLK_H:
-                            editor->seek(-1.0);
-                            break;
-                        case SDLK_RIGHT:
-                        case SDLK_L:
-                            editor->seek(1.0);
-                            break;
+                            case SDLK_ESCAPE:
+                                editor->clearMarkers();
+                                break;
+                            case SDLK_M:
+                                editor->createMarker();
+                                break;
+                            case SDLK_SPACE:
+                                editor->setPaused(!editor->getPaused());
+                                break;
+                            case SDLK_LEFT:
+                            case SDLK_H:
+                                editor->seek(-1.0);
+                                break;
+                            case SDLK_RIGHT:
+                            case SDLK_L:
+                                editor->seek(1.0);
+                                break;
+                        }
                     }
                 }
             }

@@ -3,7 +3,6 @@
 Settings::Settings() {}
 
 bool Settings::readSettings() {
-    // TODO: If settings detected to not be right format delete and start over
     std::ifstream in("Settings");
     if(!in) {
         return false;

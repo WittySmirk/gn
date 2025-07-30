@@ -25,10 +25,11 @@ enum State {
 
 class Gui {
     public:
-        Gui();
-        void spawn(Settings* _settings, bool _setup = false);
+        Gui(Settings* _settings, std::function<void()> _callback, bool _setup = false);
+        virtual ~Gui();
         void kill(); // TODO: link background and gui for safety/better
     private:
+        std::function<void()> callback;
         static void folderCallback(void* userData, const char* const* files, int filter);
         static void fileCallback(void* userData, const char* const* files, int filter);
         void openWindow();

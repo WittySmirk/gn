@@ -3,6 +3,7 @@
 Editor::Editor(SDL_Renderer* _renderer, TTF_Font* _font, Settings* _settings): Element(_renderer), font(_font), settings(_settings) {}
 
 Editor::~Editor() {
+    std::cout << "destroying editor" << std::endl;
     av_free(buffer);
     av_frame_free(&pFrameRGB);
     av_frame_free(&pFrame);
@@ -241,7 +242,7 @@ double Editor::getAudioClock() {
 void Editor::renderVideo() {
     if(!videoQueue.empty()) {
         if(videoQueue[0].pts <= getAudioClock()) {
-            std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
+            //std::cout << "Audio: " << getAudioClock() << "Video: " << videoQueue[0].pts << std::endl;
             setTexture(videoQueue[0].text);
             double pts = videoQueue[0].pts;
             videoQueue.erase(videoQueue.begin());

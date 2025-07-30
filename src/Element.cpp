@@ -3,6 +3,7 @@
 Element::Element(SDL_Renderer* _renderer): renderer(_renderer) {}
 
 Element::~Element() {
+    std::cout << "destroying element" << std::endl;
     SDL_DestroyTexture(texture);
     delete rect;
 }

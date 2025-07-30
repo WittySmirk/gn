@@ -34,10 +34,11 @@ Background
 - Shift+F3 (open editor)
 
 Editing
+- Esc (close editor)
 - Space (pause/unpause video)
 - Left/Right / H/L (seek left and right)
 - M (place marker)
-- ESC (remove markers)
+- C (clear markers)
 - E (export)
 
 ## Disclaimer

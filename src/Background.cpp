@@ -1,6 +1,6 @@
 #include "Background.h"
 
-Background::Background(Settings* _settings, Capture* _capture, Gui* _gui): settings(_settings), capture(_capture), gui(_gui) {
+Background::Background(Settings* _settings, Capture* _capture): settings(_settings), capture(_capture) {
     wc.lpfnWndProc = windowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = (LPCSTR)"gn";
@@ -72,31 +72,17 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                     ss << settings->outputFolder << r << ".mp4";
                     std::cout << ss.str() << std::endl;
                     capture->startScreenRecord(ss.str(), settings);
-                    /*
-                   
-                    appThread = std::thread([this](){
-                        std::time_t r = std::time(0);
-                        std::stringstream ss;
-                        ss << settings->outputFolder << r << ".mp4";
-                        std::cout << ss.str() << std::endl;
-                        capture->startScreenRecord(ss.str(), settings);
-                    });
-                    */
                 } else {
                     capture->endScreenRecord();
                     recording = false;
-                    //if(appThread.joinable()) appThread.join();
                 }
                 return 0;
             }
             if(wParam == OPEN_GUI_ID) {
                 if(!guiOpen) {
                     guiOpen = true;
-                    gui->spawn(settings);
-                } else {
-                    guiOpen = false;
-                    gui->kill();
-                }
+                    gui = new Gui(settings, [&](){guiOpen = false;}, false);
+                } 
             }            
             break;
         case WM_DESTROY:

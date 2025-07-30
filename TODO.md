@@ -3,9 +3,6 @@
     - Right now theres multiple versions of ffmpeg included, and libobs is fully built, not trimmed
 - UI Icons on editor
     - Dedicated settings page
-- Fix seeking
-    - Multithreading?
-    - At least make it not block main
 - Fix weird gui stuff
     - Fix crashing after first time
     - Fix editor not being able to reopen after close

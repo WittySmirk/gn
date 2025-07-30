@@ -8,7 +8,6 @@
 #define SCREEN_W 1280
 #define SCREEN_H 720
 
-// TODO: Work on color schemeing
 #define BACKGROUND SDL_Color {0, 0, 0, 0}
 #define FOREGROUND SDL_Color {255, 255, 255, 0}
 #define HIGHLIGHT SDL_Color {0, 174, 255, 0}
@@ -27,7 +26,7 @@ class Element {
         void setButton(std::function<void()>);
         void setRendered(bool _rendered);
         
-        virtual bool hasOverlay() {return false;} // TODO: rework to not need this
+        virtual bool hasOverlay() {return false;}
 
         // Input viruals
         virtual bool getFocused() {return false;}

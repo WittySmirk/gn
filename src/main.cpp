@@ -8,16 +8,14 @@
 #include "Gui.h"
 
 int main() {
-    Gui gui;
     Capture capture;
 
     Settings settings;
     if(!settings.readSettings()) {
-        gui.spawn(&settings, true);
-        return 0;
+        Gui g(&settings, [&](){}, true);
     }
 
-    Background background(&settings, &capture, &gui);
+    Background background(&settings, &capture);
     background.listenForHotkey();
 
     return 0;

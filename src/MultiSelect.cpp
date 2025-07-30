@@ -34,6 +34,7 @@ MultiSelect::MultiSelect(SDL_Renderer* _renderer, TTF_Font* _font,
 }
 
 MultiSelect::~MultiSelect() {
+    std::cout << "destroying multiselect" << std::endl;
     for(Text* t : children) {
         delete t;
     }

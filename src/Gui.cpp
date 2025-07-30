@@ -1,10 +1,7 @@
 #include "Gui.h"
 
-Gui::Gui() {}
-
-void Gui::spawn(Settings* _settings, bool _setup) {
+Gui::Gui(Settings* _settings, std::function<void()> _callback, bool _setup): callback(_callback) {
     settings = _settings;
-    // TODO: better state management
     if (_setup) {
         state = State::SETUPSTAGE1;
     } else {
@@ -12,6 +9,19 @@ void Gui::spawn(Settings* _settings, bool _setup) {
     }
 
     openWindow();
+}
+
+Gui::~Gui() {
+    quit = true;
+    std::cout << "destroying gui" << std::endl;
+    settings = nullptr;
+    for (Element* e : pipe) {
+        delete e;
+    }
+    pipe.clear();
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }
 
 void Gui::pickRightSetup() {
@@ -65,8 +75,10 @@ void Gui::openWindow() {
 
     while(!quit) {
         while(SDL_PollEvent(&event)) {
+            bool shift = false;
+            bool f3 = false;
             if (event.type == SDL_EVENT_QUIT) {
-                quit = true;
+                kill(); 
             }
             if(event.type == SDL_EVENT_TEXT_INPUT) {
                 for(Element* e : pipe) {
@@ -88,7 +100,7 @@ void Gui::openWindow() {
                                 break;
                             case SDLK_RETURN:
                                 editor->completeExport([this](){
-                                    quit = true;
+                                    kill(); 
                                 });
                                 break;
                         }
@@ -97,8 +109,11 @@ void Gui::openWindow() {
                             case SDLK_E:
                                 editor->exportClip();
                             break;
-                            case SDLK_ESCAPE:
+                            case SDLK_C:
                                 editor->clearMarkers();
+                                break;
+                            case SDLK_ESCAPE:
+                                kill();
                                 break;
                             case SDLK_M:
                                 editor->createMarker();
@@ -159,16 +174,18 @@ void Gui::openWindow() {
         SDL_RenderPresent(renderer);
     }
 
-    settings = nullptr;
-    for (Element* e : pipe) {
-        delete e;
-    }
-    pipe.clear();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    /*
+        settings = nullptr;
+        for (Element* e : pipe) {
+            delete e;
+        }
+        pipe.clear();
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+    */
+   delete this;
 }
-
 
 void Gui::createSetup() {
     switch(state) {
@@ -289,4 +306,5 @@ void Gui::fileCallback(void* userData, const char* const* files, int filter) {
 
 void Gui::kill() {
     quit = true;
+    callback();
 }

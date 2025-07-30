@@ -15,7 +15,7 @@
 
 class Background {
     public:
-        Background(Settings* _settings, Capture* _capture, Gui* _gui);
+        Background(Settings* _settings, Capture* _capture);
         ~Background();
         void listenForHotkey();
     private:
@@ -29,7 +29,7 @@ class Background {
         HWND hwnd;
         WNDCLASS wc = {};
         Capture* capture;
-        Gui* gui;
+        Gui* gui = nullptr;
         Settings* settings;
 };
 

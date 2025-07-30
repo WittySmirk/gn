@@ -48,6 +48,7 @@ class Editor: public Element {
         bool getFocused();
         bool getPaused();
         void setPaused(bool _paused);
+        SDL_AudioStream* getAStream();
     private:
         void finishSeek(double _target);
         AVFormatContext* pFormatCtx = nullptr;

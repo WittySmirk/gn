@@ -41,6 +41,7 @@ Editing
 - C (clear markers)
 - E (export)
 - S (open settings)
+- N (open new capture)
 
 SETTINGS
 - Esc (close window)

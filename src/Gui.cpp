@@ -18,7 +18,7 @@ Gui::~Gui() {
 }
 
 void Gui::pickRightSetup() {
- switch(state) {
+    switch(state) {
         case State::SETTINGS:
             createSettings();
             break;
@@ -37,7 +37,6 @@ void Gui::pickRightSetup() {
             editor->init(editFile);
             break;
     }
-
 }
 
 void Gui::openWindow() {
@@ -138,6 +137,10 @@ void Gui::openWindow() {
                             case SDLK_RIGHT:
                             case SDLK_L:
                                 editor->seek(1.0);
+                                break;
+                            case SDLK_N:
+                                SDL_ClearAudioStream(editor->getAStream());
+                                state = State::EDITINGSTAGE1;
                                 break;
                         }
                     }
@@ -331,7 +334,7 @@ void Gui::folderCallback(void* userData, const char* const* files, int filter) {
 void Gui::fileCallback(void* userData, const char* const* files, int filter) {
     Gui* self = static_cast<Gui*>(userData);
     if(!files || !files[0]) {
-        SDL_ShowOpenFileDialog(fileCallback, self, self->window, nullptr, 0, self->settings->outputFolder.c_str(), false);
+        self->kill();
         return;
     }
     self->editFile = files[0];

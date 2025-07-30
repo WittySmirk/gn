@@ -17,7 +17,7 @@ set(SDLTTF_VENDORED ON)
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
 
-add_executable(gn ${SOURCES} ${HEADERS})
+add_executable(gn WIN32 ${SOURCES} ${HEADERS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE  
     ${FFMPEG_DIR}/include

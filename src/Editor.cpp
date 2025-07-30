@@ -570,3 +570,7 @@ void Editor::setPaused(bool _paused) {
         SDL_PauseAudioStreamDevice(aStream);
     paused = _paused;
 }
+
+SDL_AudioStream* Editor::getAStream() {
+    return aStream;
+}

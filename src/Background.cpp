@@ -1,6 +1,6 @@
 #include "Background.h"
 
-Background::Background(Settings* _settings, Capture* _capture): settings(_settings), capture(_capture) {
+Background::Background(Settings* _settings, Capture* _capture, bool _notFirst): settings(_settings), capture(_capture) {
     wc.lpfnWndProc = windowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = (LPCSTR)"gn";
@@ -24,6 +24,10 @@ Background::Background(Settings* _settings, Capture* _capture): settings(_settin
         std::cerr << "Failed to create hidden window" << std::endl;
     }
 
+    HICON hIco = (HICON)LoadImage(NULL, "./assets/gn.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIco);
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIco);
+
     hTrayMenu = CreatePopupMenu();
     AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EDIT, "Open Editor");
     AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, "Quit gn");
@@ -33,11 +37,17 @@ Background::Background(Settings* _settings, Capture* _capture): settings(_settin
     nid.uID = 1;
     nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
-    nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    nid.hIcon = hIco;
     strcpy_s(nid.szTip, "gn");
 
     Shell_NotifyIcon(NIM_ADD, &nid);
-
+    
+    SetSurfaceFromIco(hIco);
+    if(!_notFirst) {
+        guiOpen = true;
+        completingFirst = true;
+        Gui* g = new Gui(settings, [&](){completingFirst = false;}, iconSurface, true);
+    }
 }
 
 Background::~Background() {
@@ -94,7 +104,7 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                 case ID_TRAY_EDIT:
                     if(!guiOpen) {
                         guiOpen = true;
-                        gui = new Gui(settings, [&](){guiOpen = false;}, false);
+                        gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, false);
                     }
                     break;
                 case ID_TRAY_EXIT:
@@ -104,23 +114,25 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             break;
         case WM_HOTKEY:
             if(wParam == START_STOP_ID) {
-                if (!recording) {
-                    recording = true;
-                    std::time_t r = std::time(0);
-                    std::stringstream ss;
-                    ss << settings->outputFolder << r << ".mp4";
-                    std::cout << ss.str() << std::endl;
-                    capture->startScreenRecord(ss.str(), settings);
-                } else {
-                    capture->endScreenRecord();
-                    recording = false;
+                if(!completingFirst) {
+                    if (!recording) {
+                        recording = true;
+                        std::time_t r = std::time(0);
+                        std::stringstream ss;
+                        ss << settings->outputFolder << r << ".mp4";
+                        std::cout << ss.str() << std::endl;
+                        capture->startScreenRecord(ss.str(), settings);
+                    } else {
+                        capture->endScreenRecord();
+                        recording = false;
+                    }
                 }
                 return 0;
             }
             if(wParam == OPEN_GUI_ID) {
                 if(!guiOpen) {
                     guiOpen = true;
-                    gui = new Gui(settings, [&](){guiOpen = false;}, false);
+                    gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, false);
                 } 
             }            
             break;
@@ -129,4 +141,67 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             break;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void Background::SetSurfaceFromIco(HICON _hIco) {
+    ICONINFO iconInfo;
+    if (!GetIconInfo(_hIco, &iconInfo)) return;
+
+    BITMAP bmp;
+    if (!GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp)) {
+        DeleteObject(iconInfo.hbmColor);
+        DeleteObject(iconInfo.hbmMask);
+        return;
+    }
+
+    int width = bmp.bmWidth;
+    int height = bmp.bmHeight;
+
+    HDC hdc = GetDC(nullptr);
+    HDC memDC = CreateCompatibleDC(hdc);
+    HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, iconInfo.hbmColor);
+
+    void* pixels = malloc(width * height * 4);
+    if (!pixels) {
+        DeleteDC(memDC);
+        ReleaseDC(nullptr, hdc);
+        DeleteObject(iconInfo.hbmColor);
+        DeleteObject(iconInfo.hbmMask);
+        return;
+    }
+
+    BITMAPINFO bmi = {};
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = width;
+    bmi.bmiHeader.biHeight = -height; // negative to flip top-down
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+
+    if (!GetDIBits(memDC, iconInfo.hbmColor, 0, height, pixels, &bmi, DIB_RGB_COLORS)) {
+        free(pixels);
+        pixels = nullptr;
+    }
+
+    SelectObject(memDC, oldBitmap);
+    DeleteDC(memDC);
+    ReleaseDC(nullptr, hdc);
+    DeleteObject(iconInfo.hbmColor);
+    DeleteObject(iconInfo.hbmMask);
+
+    if (!pixels) return;
+
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(
+        width,
+        height,
+        SDL_PIXELFORMAT_ARGB8888,
+        pixels,
+        width * 4  // pitch (bytes per row)
+    );
+
+    if(!surface) {
+        free(pixels);
+    }
+
+    iconSurface = surface;
 }

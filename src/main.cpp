@@ -11,11 +11,12 @@ int main() {
     Capture capture;
 
     Settings settings;
-    if(!settings.readSettings()) {
-        Gui* g = new Gui(&settings, [&](){}, true);
-    }
-
-    Background background(&settings, &capture);
+    /*
+        if(!settings.readSettings()) {
+            Gui* g = new Gui(&settings, [&](){}, true);
+        }
+    */
+    Background background(&settings, &capture, settings.readSettings());
     background.listenForHotkey();
 
     return 0;

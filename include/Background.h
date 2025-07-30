@@ -7,6 +7,8 @@
 #include <thread>
 #include <ctime>
 
+#include <SDL3/SDL.h>
+
 #include "Settings.h"
 #include "Capture.h"
 #include "Gui.h"
@@ -20,7 +22,7 @@
 
 class Background {
     public:
-        Background(Settings* _settings, Capture* _capture);
+        Background(Settings* _settings, Capture* _capture, bool _notFirst);
         ~Background();
         void listenForHotkey();
     private:
@@ -30,6 +32,7 @@ class Background {
         // std::thread appThread;
         bool recording = false;
         bool guiOpen = false;
+        bool completingFirst = false;
 
         HWND hwnd;
         WNDCLASS wc = {};
@@ -40,7 +43,9 @@ class Background {
         Capture* capture;
         Gui* gui = nullptr;
         Settings* settings;
-};
 
+        SDL_Surface* iconSurface = nullptr;
+        void SetSurfaceFromIco(HICON _hIco);
+};
 
 #endif

@@ -1,7 +1,5 @@
 # What needs to be done before 1.0
 - Windows Stuff
-    - System tray icon for bg app
-        - Close or open gui
     - Icon for gui app
 - Dedicated settings page
 - Fix dependencies/debloat

@@ -1,6 +1,6 @@
 #include "Gui.h"
 
-Gui::Gui(Settings* _settings, std::function<void()> _callback, bool _setup): callback(_callback) {
+Gui::Gui(Settings* _settings, std::function<void()> _callback, SDL_Surface* _icon, bool _setup): callback(_callback), icon(_icon) {
     settings = _settings;
     if (_setup) {
         state = State::SETUPSTAGE1;
@@ -67,6 +67,10 @@ void Gui::openWindow() {
     }
 
     renderer = SDL_CreateRenderer(window, nullptr);
+
+    if(icon) {
+        SDL_SetWindowIcon(window, icon);
+    }
 
     pickRightSetup();
     

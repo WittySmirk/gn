@@ -38,7 +38,7 @@ class Editor: public Element {
         void createMarker();
         void clearMarkers();
         void exportClip();
-        void completeExport();
+        void completeExport(std::function<void()> _callback);
         void seek(double _offSeconds);
 
         void draw();

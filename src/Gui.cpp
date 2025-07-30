@@ -87,7 +87,9 @@ void Gui::openWindow() {
                                 }
                                 break;
                             case SDLK_RETURN:
-                                editor->completeExport();
+                                editor->completeExport([this](){
+                                    quit = true;
+                                });
                                 break;
                         }
                     } else {

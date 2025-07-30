@@ -312,10 +312,10 @@ void Editor::exportClip() {
     input->setFocused(true);
 }
 
-void Editor::completeExport() {
-    if(!gettingInput)
+void Editor::completeExport(std::function<void()> _callback) {
+    if (!gettingInput)
         return;
-    
+
     std::string clipName = children.back()->getText();
     children.pop_back();
     gettingInput = false;
@@ -324,94 +324,154 @@ void Editor::completeExport() {
     ss << settings->clipsFolder << clipName << ".mp4";
     std::string file = ss.str();
     std::cout << file << std::endl;
-    // TODO: finish completing export
-    
+
     AVFormatContext* oFormatCtx = nullptr;
     avformat_alloc_output_context2(&oFormatCtx, nullptr, nullptr, file.c_str());
 
-    for(unsigned i = 0; i < pFormatCtx->nb_streams; i++) {
-        AVStream* inStream = pFormatCtx->streams[i];
-        AVStream* outStream = avformat_new_stream(oFormatCtx, nullptr);
-        avcodec_parameters_copy(outStream->codecpar, inStream->codecpar);
-        outStream->codecpar->codec_tag = 0;
-    }
+    AVStream* inVStream = pFormatCtx->streams[videoStream];
+    AVStream* inAStream = pFormatCtx->streams[audioStream];
 
-    if(!(oFormatCtx->oformat->flags & AVFMT_NOFILE)) {
+    AVStream* outVStream = avformat_new_stream(oFormatCtx, nullptr);
+    AVStream* outAStream = avformat_new_stream(oFormatCtx, nullptr);
+
+    const AVCodec* vCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    AVCodecContext* vEncCtx = avcodec_alloc_context3(vCodec);
+    vEncCtx->codec_id = AV_CODEC_ID_H264;
+    vEncCtx->width = pCodecCtx->width;
+    vEncCtx->height = pCodecCtx->height;
+    vEncCtx->time_base = inVStream->time_base;
+    vEncCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+    vEncCtx->framerate = av_guess_frame_rate(pFormatCtx, inVStream, nullptr);
+
+    if (oFormatCtx->oformat->flags & AVFMT_GLOBALHEADER)
+        vEncCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+    avcodec_open2(vEncCtx, vCodec, nullptr);
+    avcodec_parameters_from_context(outVStream->codecpar, vEncCtx);
+    outVStream->time_base = vEncCtx->time_base;
+
+    const AVCodec* aCodec = avcodec_find_encoder(inAStream->codecpar->codec_id);
+    AVCodecContext* aEncCtx = avcodec_alloc_context3(aCodec);
+    avcodec_parameters_to_context(aEncCtx, inAStream->codecpar);
+    aEncCtx->time_base = inAStream->time_base;
+
+    if (oFormatCtx->oformat->flags & AVFMT_GLOBALHEADER)
+        aEncCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+    avcodec_open2(aEncCtx, aCodec, nullptr);
+    avcodec_parameters_from_context(outAStream->codecpar, aEncCtx);
+    outAStream->time_base = aEncCtx->time_base;
+
+    if (!(oFormatCtx->oformat->flags & AVFMT_NOFILE))
         avio_open(&oFormatCtx->pb, file.c_str(), AVIO_FLAG_WRITE);
-    }
 
     avformat_write_header(oFormatCtx, nullptr);
-    
-    AVStream* vStream = pFormatCtx->streams[videoStream];
-    int64_t seekTarget = markerOne / av_q2d(vStream->time_base);
-    if(av_seek_frame(pFormatCtx, videoStream, seekTarget, AVSEEK_FLAG_BACKWARD) < 0) {
-        std::cerr << "Seek failed to marker one " << std::endl;
-        return;
-    }
 
+    double seekTime = markerOne > 1.0 ? markerOne - 1.0 : 0.0;
+    int64_t seekTarget = seekTime / av_q2d(inVStream->time_base);
+    av_seek_frame(pFormatCtx, videoStream, seekTarget, AVSEEK_FLAG_BACKWARD);
     avcodec_flush_buffers(pCodecCtx);
     avcodec_flush_buffers(aCodecCtx);
 
-    // First find frame to start
-    const double EPS = 0.01;
-    while(av_read_frame(pFormatCtx, &packet) >= 0) {
-        if(packet.stream_index == videoStream) {
-            if (avcodec_send_packet(pCodecCtx, &packet) >= 0 &&
-                avcodec_receive_frame(pCodecCtx, pFrame) >= 0) { 
-                double framePts = pFrame->pts * av_q2d(vStream->time_base);
+    bool videoDone = false;
+    bool audioDone = false;
+    AVPacket pkt;
+    av_init_packet(&pkt);
 
-                if(framePts + EPS >= markerOne) {
-                    markerOne = framePts;
-                    break;
+    while (!videoDone || !audioDone) {
+        if (av_read_frame(pFormatCtx, &pkt) < 0)
+            break;
+
+        if (pkt.stream_index == videoStream && !videoDone) {
+            if (avcodec_send_packet(pCodecCtx, &pkt) >= 0) {
+                while (avcodec_receive_frame(pCodecCtx, pFrame) >= 0) {
+                    double pts = pFrame->pts * av_q2d(inVStream->time_base);
+                    if (pts < markerOne) continue;
+                    if (pts > markerTwo) {
+                        videoDone = true;
+                        break;
+                    }
+
+                    pFrame->pts = av_rescale_q(pFrame->pts, inVStream->time_base, vEncCtx->time_base);
+                    if (avcodec_send_frame(vEncCtx, pFrame) >= 0) {
+                        AVPacket outPkt;
+                        av_init_packet(&outPkt);
+                        outPkt.data = nullptr;
+                        outPkt.size = 0;
+                        while (avcodec_receive_packet(vEncCtx, &outPkt) == 0) {
+                            outPkt.stream_index = outVStream->index;
+                            outPkt.pts = av_rescale_q(outPkt.pts, vEncCtx->time_base, outVStream->time_base);
+                            outPkt.dts = av_rescale_q(outPkt.dts, vEncCtx->time_base, outVStream->time_base);
+                            outPkt.duration = av_rescale_q(outPkt.duration, vEncCtx->time_base, outVStream->time_base);
+                            av_interleaved_write_frame(oFormatCtx, &outPkt);
+                            av_packet_unref(&outPkt);
+                        }
+                    }
+                }
+            }
+        } else if (pkt.stream_index == audioStream && !audioDone) {
+            if (avcodec_send_packet(aCodecCtx, &pkt) >= 0) {
+                while (avcodec_receive_frame(aCodecCtx, aFrame) >= 0) {
+                    double apts = aFrame->pts * av_q2d(inAStream->time_base);
+                    if (apts < markerOne) continue;
+                    if (apts > markerTwo) {
+                        audioDone = true;
+                        break;
+                    }
+
+                    aFrame->pts = av_rescale_q(aFrame->pts, inAStream->time_base, aEncCtx->time_base);
+                    if (avcodec_send_frame(aEncCtx, aFrame) >= 0) {
+                        AVPacket outPkt;
+                        av_init_packet(&outPkt);
+                        outPkt.data = nullptr;
+                        outPkt.size = 0;
+                        while (avcodec_receive_packet(aEncCtx, &outPkt) == 0) {
+                            outPkt.stream_index = outAStream->index;
+                            outPkt.pts = av_rescale_q(outPkt.pts, aEncCtx->time_base, outAStream->time_base);
+                            outPkt.dts = av_rescale_q(outPkt.dts, aEncCtx->time_base, outAStream->time_base);
+                            outPkt.duration = av_rescale_q(outPkt.duration, aEncCtx->time_base, outAStream->time_base);
+                            av_interleaved_write_frame(oFormatCtx, &outPkt);
+                            av_packet_unref(&outPkt);
+                        }
+                    }
                 }
             }
         }
-        av_packet_unref(&packet);
+        av_packet_unref(&pkt);
     }
-    av_packet_unref(&packet);
 
-    // Then write packets because more efficient
-    while(av_read_frame(pFormatCtx, &packet) >= 0) {
-        AVStream* inStream = pFormatCtx->streams[packet.stream_index];
-        AVStream* outStream = oFormatCtx->streams[packet.stream_index];
-
-        if (packet.pts == AV_NOPTS_VALUE || packet.dts == AV_NOPTS_VALUE) {
-            av_packet_unref(&packet);
-            continue;
-        }
-        double pts = packet.pts * av_q2d(inStream->time_base);
-
-        
-        if(pts < markerOne) {
-            av_packet_unref(&packet);
-            continue;
-        }
-        if(pts > markerTwo) {
-            av_packet_unref(&packet);
-            break;
-        }
-
-        if(packet.stream_index == videoStream && pts > markerTwo) {
-            av_packet_unref(&packet);
-            break;
-        }
-
-        if(pts >= markerOne && pts <= markerTwo) {
-            packet.pts = av_rescale_q_rnd(packet.pts, inStream->time_base, outStream->time_base, AV_ROUND_NEAR_INF);
-            packet.dts = av_rescale_q_rnd(packet.dts, inStream->time_base, outStream->time_base, AV_ROUND_NEAR_INF);
-            packet.duration = av_rescale_q(packet.duration, inStream->time_base, outStream->time_base);
-            packet.pos = -1;
-
-            av_interleaved_write_frame(oFormatCtx, &packet);
-        }
-
-        av_packet_unref(&packet);
+    avcodec_send_frame(vEncCtx, nullptr);
+    AVPacket outPkt;
+    av_init_packet(&outPkt);
+    while (avcodec_receive_packet(vEncCtx, &outPkt) == 0) {
+        outPkt.stream_index = outVStream->index;
+        outPkt.pts = av_rescale_q(outPkt.pts, vEncCtx->time_base, outVStream->time_base);
+        outPkt.dts = av_rescale_q(outPkt.dts, vEncCtx->time_base, outVStream->time_base);
+        outPkt.duration = av_rescale_q(outPkt.duration, vEncCtx->time_base, outVStream->time_base);
+        av_interleaved_write_frame(oFormatCtx, &outPkt);
+        av_packet_unref(&outPkt);
     }
-    av_packet_unref(&packet);
+
+    avcodec_send_frame(aEncCtx, nullptr);
+    av_init_packet(&outPkt);
+    while (avcodec_receive_packet(aEncCtx, &outPkt) == 0) {
+        outPkt.stream_index = outAStream->index;
+        outPkt.pts = av_rescale_q(outPkt.pts, aEncCtx->time_base, outAStream->time_base);
+        outPkt.dts = av_rescale_q(outPkt.dts, aEncCtx->time_base, outAStream->time_base);
+        outPkt.duration = av_rescale_q(outPkt.duration, aEncCtx->time_base, outAStream->time_base);
+        av_interleaved_write_frame(oFormatCtx, &outPkt);
+        av_packet_unref(&outPkt);
+    }
 
     av_write_trailer(oFormatCtx);
-    avio_closep(&oFormatCtx->pb);
+    if (!(oFormatCtx->oformat->flags & AVFMT_NOFILE))
+        avio_closep(&oFormatCtx->pb);
+
+    avcodec_free_context(&vEncCtx);
+    avcodec_free_context(&aEncCtx);
     avformat_free_context(oFormatCtx);
+
+    _callback();
 }
 
 void Editor::seek(double _offSeconds) {

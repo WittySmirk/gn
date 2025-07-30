@@ -2,13 +2,13 @@
 - Fix dependencies/debloat
     - Right now theres multiple versions of ffmpeg included, and libobs is fully built, not trimmed
 - UI Icons on editor
-    - Actual X - buttons
     - Dedicated settings page
 - Fix seeking
     - Multithreading?
     - At least make it not block main
-- Fix first time setup
+- Fix weird gui stuff
     - Fix crashing after first time
+    - Fix editor not being able to reopen after close
 - Windows Stuff
     - System tray icon for bg app
         - Close or open gui

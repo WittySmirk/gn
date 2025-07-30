@@ -27,7 +27,7 @@ class Gui {
     public:
         Gui(Settings* _settings, std::function<void()> _callback, SDL_Surface* _icon, State _state);
         virtual ~Gui();
-        void kill(); // TODO: link background and gui for safety/better
+        void kill();
     private:
         std::function<void()> callback;
         static void folderCallback(void* userData, const char* const* files, int filter);

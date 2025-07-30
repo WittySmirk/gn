@@ -479,7 +479,7 @@ void Editor::seek(double _offSeconds) {
     if(gettingInput)
         return;
 
-    clearMarkers(); // TODO: remove this and fix marker system so that you can make them backwards
+    clearMarkers();
     AVStream* vStream = pFormatCtx->streams[videoStream];
     double current = videoQueue.empty() ? getAudioClock() : videoQueue[0].pts;
     double target = std::max(0.0, current + _offSeconds);

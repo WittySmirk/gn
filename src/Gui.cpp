@@ -311,11 +311,13 @@ void Gui::createSettings() {
 }
 
 void Gui::folderCallback(void* userData, const char* const* files, int filter) {
-    // TODO: handle closing or not picking folder
     Gui* self = static_cast<Gui*>(userData);
-        std::stringstream ss;
-        ss << files[0];
-        ss << "\\";
+    if(!files || !files[0]) {
+        return;
+    }
+    std::stringstream ss;
+    ss << files[0];
+    ss << "\\";
 
     if (self->currentSetting == SettingsE::OUTPUTFOLDER) {
         std::cout << "set out folder" << std::endl;
@@ -327,8 +329,11 @@ void Gui::folderCallback(void* userData, const char* const* files, int filter) {
 }
 
 void Gui::fileCallback(void* userData, const char* const* files, int filter) {
-    // TODO: handle closing or not picking file
     Gui* self = static_cast<Gui*>(userData);
+    if(!files || !files[0]) {
+        SDL_ShowOpenFileDialog(fileCallback, self, self->window, nullptr, 0, self->settings->outputFolder.c_str(), false);
+        return;
+    }
     self->editFile = files[0];
     self->state = State::EDITINGSTAGE2;
 }

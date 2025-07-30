@@ -12,7 +12,7 @@ int main() {
 
     Settings settings;
     if(!settings.readSettings()) {
-        Gui g(&settings, [&](){}, true);
+        Gui* g = new Gui(&settings, [&](){}, true);
     }
 
     Background background(&settings, &capture);

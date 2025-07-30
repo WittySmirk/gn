@@ -172,18 +172,8 @@ void Gui::openWindow() {
         }
 
         SDL_RenderPresent(renderer);
-    }
+   }
 
-    /*
-        settings = nullptr;
-        for (Element* e : pipe) {
-            delete e;
-        }
-        pipe.clear();
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-    */
    delete this;
 }
 

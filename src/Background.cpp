@@ -23,10 +23,27 @@ Background::Background(Settings* _settings, Capture* _capture): settings(_settin
     if(!hwnd) {
         std::cerr << "Failed to create hidden window" << std::endl;
     }
+
+    hTrayMenu = CreatePopupMenu();
+    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EDIT, "Open Editor");
+    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, "Quit gn");
+
+    nid.cbSize = sizeof(NOTIFYICONDATA);
+    nid.hWnd = hwnd;
+    nid.uID = 1;
+    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+    nid.uCallbackMessage = WM_TRAYICON;
+    nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    strcpy_s(nid.szTip, "gn");
+
+    Shell_NotifyIcon(NIM_ADD, &nid);
+
 }
 
 Background::~Background() {
     UnregisterHotKey(hwnd, START_STOP_ID);
+    Shell_NotifyIcon(NIM_DELETE, &nid);
+    DestroyMenu(hTrayMenu);
 }
 
 void Background::listenForHotkey() {
@@ -63,6 +80,28 @@ LRESULT CALLBACK Background::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
 LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch(uMsg) {
+        case WM_TRAYICON:
+            if(lParam == WM_RBUTTONUP) {
+                POINT pt;
+                GetCursorPos(&pt);
+                SetForegroundWindow(hwnd);
+
+                TrackPopupMenu(hTrayMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
+            }
+            break;
+        case WM_COMMAND:
+            switch(LOWORD(wParam)){
+                case ID_TRAY_EDIT:
+                    if(!guiOpen) {
+                        guiOpen = true;
+                        gui = new Gui(settings, [&](){guiOpen = false;}, false);
+                    }
+                    break;
+                case ID_TRAY_EXIT:
+                    PostQuitMessage(0);
+                    break;
+            }
+            break;
         case WM_HOTKEY:
             if(wParam == START_STOP_ID) {
                 if (!recording) {

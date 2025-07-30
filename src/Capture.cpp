@@ -3,7 +3,6 @@
 Capture::Capture() {}
 
 void Capture::startScreenRecord(std::string _filename, Settings* _settings) {
-    // TODO: optimize OBS and settings
     obs_startup("en-US", nullptr, nullptr);
     obs_add_data_path("./data/libobs/");
     obs_add_module_path("./obs-plugins/64bit/", "./data/obs-plugins/%module%/");
@@ -17,12 +16,12 @@ void Capture::startScreenRecord(std::string _filename, Settings* _settings) {
     vInfo.output_width = 1920;
     vInfo.output_height = 1080;
     vInfo.output_format = VIDEO_FORMAT_NV12;
-    vInfo.fps_num = 60;
+    vInfo.fps_num = _settings->fps;
     vInfo.fps_den = 1;
     vInfo.graphics_module = "libobs-d3d11";
     vInfo.gpu_conversion = true;
-    vInfo.colorspace = VIDEO_CS_DEFAULT;
-    vInfo.range = VIDEO_RANGE_DEFAULT;
+    vInfo.colorspace = VIDEO_CS_709;
+    vInfo.range = VIDEO_RANGE_PARTIAL;
     vInfo.scale_type = OBS_SCALE_BILINEAR;
 
     if(obs_reset_video(&vInfo) != 0) {
@@ -50,7 +49,8 @@ void Capture::startScreenRecord(std::string _filename, Settings* _settings) {
     obs_data_set_string(vEncSettings, "preset", "veryfast");
     obs_data_set_string(vEncSettings, "rate_control", "CRF");
     obs_data_set_int(vEncSettings, "crf", 20);
-    obs_encoder_t* vEncoder = obs_video_encoder_create("obs_x264", "simple_h264_recording", vEncSettings, nullptr);
+    obs_encoder_t* vEncoder = nullptr;
+    vEncoder = obs_video_encoder_create("obs_x264", "video_recording", vEncSettings, nullptr);
     obs_encoder_set_video(vEncoder, obs_get_video());
     obs_data_release(vEncSettings);
 

@@ -18,11 +18,6 @@ class Capture {
     private:
         obs_output_t* output;
         obs_source_t* capture;
-        /*
-        PROCESS_INFORMATION ffmpegProcess = {0};
-        HANDLE hStdInRead = NULL;
-        HANDLE hStdInWrite = NULL;
-        */
 };
 
 #endif

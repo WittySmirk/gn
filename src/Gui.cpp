@@ -1,13 +1,6 @@
 #include "Gui.h"
 
-Gui::Gui(Settings* _settings, std::function<void()> _callback, SDL_Surface* _icon, bool _setup): callback(_callback), icon(_icon) {
-    settings = _settings;
-    if (_setup) {
-        state = State::SETUPSTAGE1;
-    } else {
-        state = State::EDITINGSTAGE1;
-    }
-
+Gui::Gui(Settings* _settings, std::function<void()> _callback, SDL_Surface* _icon, State _state):settings(_settings), callback(_callback), icon(_icon), state(_state) {
     openWindow();
 }
 
@@ -26,20 +19,23 @@ Gui::~Gui() {
 
 void Gui::pickRightSetup() {
  switch(state) {
+        case State::SETTINGS:
+            createSettings();
+            break;
         case State::SETUPSTAGE1:
         case State::SETUPSTAGE2:
         case State::SETUPSTAGE3:
             createSetup();
-        break;
+            break;
         case State::EDITINGSTAGE1:
         std::cout << settings->outputFolder << std::endl;
             SDL_ShowOpenFileDialog(fileCallback, this, window, nullptr, 0, settings->outputFolder.c_str(), false);
-        break;
+            break;
         case State::EDITINGSTAGE2:
             editor = new Editor(renderer, font, settings);
             pipe.push_back(editor);
             editor->init(editFile);
-        break;
+            break;
     }
 
 }
@@ -79,14 +75,27 @@ void Gui::openWindow() {
 
     while(!quit) {
         while(SDL_PollEvent(&event)) {
-            bool shift = false;
-            bool f3 = false;
             if (event.type == SDL_EVENT_QUIT) {
                 kill(); 
             }
             if(event.type == SDL_EVENT_TEXT_INPUT) {
                 for(Element* e : pipe) {
                     e->collectText(event.text.text);
+                }
+            }
+            if(state != State::SETUPSTAGE1 || state != State::SETUPSTAGE2 || state != State::SETUPSTAGE3) {
+                if(event.type == SDL_EVENT_KEY_DOWN) {
+                    switch(event.key.key) {
+                        case SDLK_ESCAPE:
+                            kill();
+                            break;
+                        case SDLK_S:
+                            if(state == State::EDITINGSTAGE2)
+                                state = State::SETTINGS;
+                            else
+                                state = State::EDITINGSTAGE1;
+                            break;
+                    }
                 }
             }
             if (state == State::EDITINGSTAGE2) {
@@ -115,9 +124,6 @@ void Gui::openWindow() {
                             break;
                             case SDLK_C:
                                 editor->clearMarkers();
-                                break;
-                            case SDLK_ESCAPE:
-                                kill();
                                 break;
                             case SDLK_M:
                                 editor->createMarker();
@@ -227,21 +233,6 @@ void Gui::createSetup() {
                 padding, t3->getRect()->y + t3->getRect()->h + padding);
             pipe.push_back(m);
 
-            /*
-            std::vector<std::string> audioItems;
-            audioItems.clear();
-            for(std::string& s : devices) {
-                MultiItem i = {s, [s, this](){
-                    settings->mic = s;
-                    std::cout << settings->mic << std::endl;
-                }};
-                audioItems.push_back(i);
-            }
-
-            MultiSelect* m3 = new MultiSelect(renderer, font, "Select Mic", audioItems, padding, m2->getRect()->y + m->getRect()->h + padding);
-            pipe.push_back(m3);
-            */
-
             std::string gpu;
             if (settings->amd) {
                 gpu = "Detected AMD gpu";
@@ -253,7 +244,6 @@ void Gui::createSetup() {
 
             Text* t4 = new Text(renderer, font, gpu, padding, SCREEN_H - padding * 2, 34, HIGHLIGHT);
             pipe.push_back(t4);
-
 
             Text* error = new Text(renderer, font, "Please set all before finishing setup", padding, t4->getRect()->y - t4->getRect()->h - padding, 34, FOREGROUND);
             error->setRendered(false);
@@ -273,6 +263,51 @@ void Gui::createSetup() {
             break;
         }
     }
+}
+
+void Gui::createSettings() {
+    const int padding = 25;
+
+    Text* t1 = new Text(renderer, font, "Settings", padding, padding, 48, FOREGROUND);
+    pipe.push_back(t1);
+
+    Text* t2 = new Text(renderer, font, "Pick Capture Location", padding, t1->getRect()->y + t1->getRect()->h + padding, 34, FOREGROUND);
+    t2->setButton([this](){
+        currentSetting = SettingsE::OUTPUTFOLDER;
+        SDL_ShowOpenFolderDialog(folderCallback, this, window, nullptr, false);
+    });
+    t2->setBorderColor(HIGHLIGHT);
+    pipe.push_back(t2);
+
+    Text* t3 = new Text(renderer, font, "Pick Clips Location", padding, t2->getRect()->y + t2->getRect()->h + padding, 34, FOREGROUND);
+    t3->setButton([this]() {
+        currentSetting = SettingsE::CLIPSFOLDER;
+        SDL_ShowOpenFolderDialog(folderCallback, this, window, nullptr, false);
+    });
+    t3->setBorderColor(HIGHLIGHT);
+    pipe.push_back(t3);
+
+    MultiSelect* m = new MultiSelect(renderer, font, "Select fps", std::vector<MultiItem>{
+        MultiItem{"30 fps", [this](){settings->fps = 30;}},
+        MultiItem{"60 fps", [this](){settings->fps = 60;}},
+        MultiItem{"120 fps", [this](){settings->fps = 120;}}
+    }, 
+        padding, t3->getRect()->y + t3->getRect()->h + padding);
+    pipe.push_back(m);
+
+    Text* t4 = new Text(renderer, font, "Confirm", padding, m->getRect()->y + m->getRect()->h + padding, 34, FOREGROUND);
+    t4->setBorderColor(HIGHLIGHT);
+    t4->setButton([this](){
+        settings->writeSettingsFile();
+    });
+    pipe.push_back(t4);
+
+    Text* t5 = new Text(renderer, font, "Edit", padding, t4->getRect()->y + t4->getRect()->h + padding, 34, FOREGROUND);
+    t5->setBorderColor(HIGHLIGHT);
+    t5->setButton([this](){
+        state = State::EDITINGSTAGE1;
+    });
+    pipe.push_back(t5);
 }
 
 void Gui::folderCallback(void* userData, const char* const* files, int filter) {

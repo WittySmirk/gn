@@ -29,8 +29,9 @@ Background::Background(Settings* _settings, Capture* _capture, bool _notFirst): 
     SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIco);
 
     hTrayMenu = CreatePopupMenu();
-    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EDIT, "Open Editor");
-    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, "Quit gn");
+    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_SETTINGS, "Settings");
+    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EDIT, "Editor");
+    AppendMenu(hTrayMenu, MF_STRING, ID_TRAY_EXIT, "Quit");
 
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hwnd;
@@ -42,11 +43,11 @@ Background::Background(Settings* _settings, Capture* _capture, bool _notFirst): 
 
     Shell_NotifyIcon(NIM_ADD, &nid);
     
-    SetSurfaceFromIco(hIco);
+    setSurfaceFromIco(hIco);
     if(!_notFirst) {
         guiOpen = true;
         completingFirst = true;
-        Gui* g = new Gui(settings, [&](){completingFirst = false;}, iconSurface, true);
+        Gui* g = new Gui(settings, [&](){completingFirst = false;}, iconSurface, State::SETUPSTAGE1);
     }
 }
 
@@ -101,10 +102,14 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             break;
         case WM_COMMAND:
             switch(LOWORD(wParam)){
+                case ID_TRAY_SETTINGS:
+                    guiOpen = true;
+                    gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, State::SETTINGS);
+                    break;
                 case ID_TRAY_EDIT:
                     if(!guiOpen) {
                         guiOpen = true;
-                        gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, false);
+                        gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, State::EDITINGSTAGE1);
                     }
                     break;
                 case ID_TRAY_EXIT:
@@ -132,7 +137,7 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             if(wParam == OPEN_GUI_ID) {
                 if(!guiOpen) {
                     guiOpen = true;
-                    gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, false);
+                    gui = new Gui(settings, [&](){guiOpen = false;}, iconSurface, State::EDITINGSTAGE1);
                 } 
             }            
             break;
@@ -143,7 +148,7 @@ LRESULT Background::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void Background::SetSurfaceFromIco(HICON _hIco) {
+void Background::setSurfaceFromIco(HICON _hIco) {
     ICONINFO iconInfo;
     if (!GetIconInfo(_hIco, &iconInfo)) return;
 

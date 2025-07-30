@@ -19,6 +19,7 @@
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 #define ID_TRAY_EDIT 1002
+#define ID_TRAY_SETTINGS 1003
 
 class Background {
     public:
@@ -45,7 +46,7 @@ class Background {
         Settings* settings;
 
         SDL_Surface* iconSurface = nullptr;
-        void SetSurfaceFromIco(HICON _hIco);
+        void setSurfaceFromIco(HICON _hIco);
 };
 
 #endif

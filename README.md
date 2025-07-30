@@ -40,6 +40,11 @@ Editing
 - M (place marker)
 - C (clear markers)
 - E (export)
+- S (open settings)
+
+SETTINGS
+- Esc (close window)
+- S (open editor)
 
 ## Disclaimer
 Right now this application is only available on Windows. It is possible to make multiplatform, but right now it relies heavily on Win32 apis.

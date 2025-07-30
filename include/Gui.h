@@ -25,7 +25,7 @@ enum State {
 
 class Gui {
     public:
-        Gui(Settings* _settings, std::function<void()> _callback, SDL_Surface* _icon, bool _setup = false);
+        Gui(Settings* _settings, std::function<void()> _callback, SDL_Surface* _icon, State _state);
         virtual ~Gui();
         void kill(); // TODO: link background and gui for safety/better
     private:
@@ -33,8 +33,10 @@ class Gui {
         static void folderCallback(void* userData, const char* const* files, int filter);
         static void fileCallback(void* userData, const char* const* files, int filter);
         void openWindow();
-        void createSetup();
         void pickRightSetup();
+
+        void createSetup();
+        void createSettings();
 
         SDL_Surface* icon;
 

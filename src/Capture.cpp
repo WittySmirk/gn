@@ -2,6 +2,10 @@
 
 Capture::Capture() {}
 
+Capture::~Capture() {
+    obs_shutdown();
+}
+
 void Capture::startScreenRecord(std::string _filename, Settings* _settings) {
     obs_startup("en-US", nullptr, nullptr);
     obs_add_data_path("./data/libobs/");
@@ -49,15 +53,14 @@ void Capture::startScreenRecord(std::string _filename, Settings* _settings) {
     obs_data_set_string(vEncSettings, "preset", "veryfast");
     obs_data_set_string(vEncSettings, "rate_control", "CRF");
     obs_data_set_int(vEncSettings, "crf", 20);
-    obs_encoder_t* vEncoder = nullptr;
-    vEncoder = obs_video_encoder_create("obs_x264", "video_recording", vEncSettings, nullptr);
-    obs_encoder_set_video(vEncoder, obs_get_video());
+    vEnc = obs_video_encoder_create("obs_x264", "video_recording", vEncSettings, nullptr);
+    obs_encoder_set_video(vEnc, obs_get_video());
     obs_data_release(vEncSettings);
 
     obs_source_t* aSource = obs_source_create("wasapi_output_capture", "audio capture", nullptr, nullptr);
     obs_set_output_source(1, aSource);
-    obs_encoder_t* aEncoder = obs_audio_encoder_create("ffmpeg_aac", "simple_aac_recording", nullptr, (size_t)0, nullptr);
-    obs_encoder_set_audio(aEncoder, obs_get_audio());
+    aEnc = obs_audio_encoder_create("ffmpeg_aac", "simple_aac_recording", nullptr, (size_t)0, nullptr);
+    obs_encoder_set_audio(aEnc, obs_get_audio());
 
 
 obs_enum_outputs([](void*, obs_output_t* out) {
@@ -70,8 +73,8 @@ obs_enum_outputs([](void*, obs_output_t* out) {
     output= obs_output_create("ffmpeg_muxer", "simple_ffmpeg_output", recordOutputSettings, nullptr);
     obs_data_release(recordOutputSettings);
 
-    obs_output_set_video_encoder(output, vEncoder);
-    obs_output_set_audio_encoder(output, aEncoder, (size_t)0);
+    obs_output_set_video_encoder(output, vEnc);
+    obs_output_set_audio_encoder(output, aEnc, (size_t)0);
 
     if(!obs_output_start(output)) {
         std::cerr << "output failed to start" << std::endl;
@@ -83,5 +86,6 @@ void Capture::endScreenRecord() {
     obs_output_stop(output);
     obs_output_release(output);
     obs_source_release(capture);
-    obs_shutdown();
+    obs_encoder_release(vEnc);
+    obs_encoder_release(aEnc);
 }

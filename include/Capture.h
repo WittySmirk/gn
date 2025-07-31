@@ -13,11 +13,14 @@
 class Capture {
     public:
         Capture();
+        ~Capture();
         void startScreenRecord(std::string _filename, Settings* _settings);
         void endScreenRecord();
     private:
         obs_output_t* output;
         obs_source_t* capture;
+        obs_encoder_t* vEnc;
+        obs_encoder_t* aEnc;
 };
 
 #endif

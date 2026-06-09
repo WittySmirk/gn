@@ -33,3 +33,11 @@ objc2-app-kit = { version = "0.3", default-features = false, features = [
     "NSWindow",
 ] }
 objc2-foundation = "0.3"
+
+ffmpeg-next = "8.1"
+macroquad = "0.4"
+rfd = "0.17"
+
+[[bin]]
+name = "gn-editor"
+path = "src/bin/editor/main.rs"

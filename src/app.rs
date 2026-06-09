@@ -1,4 +1,6 @@
 use std::cell::RefCell;
+use std::path::PathBuf;
+use std::process::Command;
 use std::time::Duration;
 
 use global_hotkey::hotkey::{Code as HkCode, HotKey, Modifiers as HkMods};
@@ -198,12 +200,56 @@ impl App {
     }
 
     fn open_editor(&self) {
-        log::info!("Opening editor");
+        let latest = latest_capture(&self.settings.output_folder);
+        let path = match latest {
+            Some(p) => p,
+            None => {
+                log::warn!("No captures found in {:?}", self.settings.output_folder);
+                return;
+            }
+        };
+
+        let editor_path = find_editor_binary();
+        log::info!("Opening editor for {} with {}", path.display(), editor_path.display());
+
+        Command::new(&editor_path)
+            .arg(&path)
+            .arg(&self.settings.clips_folder)
+            .spawn()
+            .ok();
     }
 
     fn open_settings(&self) {
         log::info!("Opening settings");
     }
+}
+
+fn latest_capture(folder: &PathBuf) -> Option<PathBuf> {
+    let entries = std::fs::read_dir(folder).ok()?;
+    entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|ext| ext == "mp4"))
+        .max_by_key(|p| std::fs::metadata(p).ok().and_then(|m| m.modified().ok()))
+}
+
+fn find_editor_binary() -> PathBuf {
+    if let Ok(exe) = std::env::current_exe() {
+        let sibling = exe.parent().map(|d| d.join("gn-editor"));
+        if let Some(ref path) = sibling {
+            if path.exists() {
+                return path.clone();
+            }
+        }
+        let sibling = exe.parent().map(|d| d.join("gn-editor.exe"));
+        if let Some(ref path) = sibling {
+            if path.exists() {
+                return path.clone();
+            }
+        }
+    }
+    // Fallback: assume it's in PATH
+    PathBuf::from("gn-editor")
 }
 
 fn create_tray_icon() -> Icon {

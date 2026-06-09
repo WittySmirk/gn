@@ -10,6 +10,15 @@ pub struct Settings {
     pub nvidia: bool,
     #[serde(default)]
     pub amd: bool,
+    /// Audio device identifier (platform-specific):
+    ///   macOS: BlackHole device index (e.g. "1")
+    ///   Windows: Stereo Mix device name (e.g. "Stereo Mix (Realtek Audio)")
+    ///   Linux: PulseAudio monitor source name
+    #[serde(default)]
+    pub audio_device: Option<String>,
+    /// Display/monitor index to capture (0 = primary)
+    #[serde(default)]
+    pub display_index: Option<u32>,
 }
 
 impl Default for Settings {
@@ -21,6 +30,8 @@ impl Default for Settings {
             clips_folder: docs.join("gn").join("clips"),
             nvidia: false,
             amd: false,
+            audio_device: None,
+            display_index: None,
         }
     }
 }

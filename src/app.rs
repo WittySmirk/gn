@@ -1,6 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::thread;
+use std::cell::RefCell;
 use std::time::Duration;
 
 use global_hotkey::hotkey::{Code as HkCode, HotKey, Modifiers as HkMods};
@@ -9,10 +7,11 @@ use tray_icon::menu::accelerator::{Accelerator, Code as AccelCode, Modifiers as 
 use tray_icon::menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
+use crate::recorder::RecordingManager;
 use crate::settings::Settings;
 
 pub struct App {
-    _settings: Settings,
+    settings: Settings,
     _tray_icon: TrayIcon,
     _hotkey_manager: GlobalHotKeyManager,
     menu_start_stop: MenuItem,
@@ -21,13 +20,11 @@ pub struct App {
     menu_quit: MenuItem,
     hotkey_record: u32,
     hotkey_editor: u32,
-    recording: Arc<AtomicBool>,
+    recorder: RefCell<RecordingManager>,
 }
 
 impl App {
     pub fn new(settings: Settings) -> Self {
-        let recording = Arc::new(AtomicBool::new(false));
-
         let menu = Menu::new();
 
         let record_accel = Accelerator::new(
@@ -71,7 +68,7 @@ impl App {
         let (hk_record, hk_editor) = Self::register_hotkeys(&hotkey_manager);
 
         Self {
-            _settings: settings,
+            settings,
             _tray_icon: tray_icon,
             _hotkey_manager: hotkey_manager,
             menu_start_stop: start_stop,
@@ -80,7 +77,7 @@ impl App {
             menu_quit: quit,
             hotkey_record: hk_record,
             hotkey_editor: hk_editor,
-            recording,
+            recorder: RefCell::new(RecordingManager::new()),
         }
     }
 
@@ -181,16 +178,22 @@ impl App {
     }
 
     fn toggle_recording(&self) {
-        let recording = !self.recording.load(Ordering::SeqCst);
-        self.recording.store(recording, Ordering::SeqCst);
+        let mut recorder = self.recorder.borrow_mut();
 
-        if recording {
-            log::info!("Starting recording");
-            self.menu_start_stop.set_text("Stop Recording");
-            self.start_recording_thread();
-        } else {
-            log::info!("Stopping recording");
+        if recorder.is_recording() {
+            recorder.stop();
             self.menu_start_stop.set_text("Start Recording");
+            log::info!("Recording stopped");
+        } else {
+            match recorder.start(&self.settings) {
+                Ok(()) => {
+                    self.menu_start_stop.set_text("Stop Recording");
+                    log::info!("Recording started");
+                }
+                Err(e) => {
+                    log::error!("Failed to start recording: {e}");
+                }
+            }
         }
     }
 
@@ -200,16 +203,6 @@ impl App {
 
     fn open_settings(&self) {
         log::info!("Opening settings");
-    }
-
-    fn start_recording_thread(&self) {
-        let recording = self.recording.clone();
-        thread::spawn(move || {
-            while recording.load(Ordering::SeqCst) {
-                thread::sleep(Duration::from_millis(100));
-            }
-            log::info!("Recording thread stopped");
-        });
     }
 }
 

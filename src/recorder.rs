@@ -29,6 +29,12 @@ impl RecordingManager {
         }
 
         let output_path = generate_output_path(&settings.output_folder);
+
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create output directory: {e}"))?;
+        }
+
         let mut cmd = build_ffmpeg_command(settings, &output_path)?;
 
         log::info!("Starting recording to {}", output_path.display());
@@ -87,7 +93,7 @@ fn build_ffmpeg_command(settings: &Settings, output: &Path) -> Result<Command, S
     let mut cmd = Command::new("ffmpeg");
     cmd.stdin(Stdio::piped())
         .stdout(Stdio::null())
-        .stderr(Stdio::null());
+        .stderr(Stdio::inherit());
 
     #[cfg(target_os = "macos")]
     {

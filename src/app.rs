@@ -220,7 +220,13 @@ impl App {
     }
 
     fn open_settings(&self) {
-        log::info!("Opening settings");
+        let settings_path = Settings::config_path();
+        let bin = find_settings_binary();
+        log::info!("Opening settings ({}) with {}", settings_path.display(), bin.display());
+        Command::new(&bin)
+            .arg(settings_path.to_string_lossy().as_ref())
+            .spawn()
+            .ok();
     }
 }
 
@@ -250,6 +256,25 @@ fn find_editor_binary() -> PathBuf {
     }
     // Fallback: assume it's in PATH
     PathBuf::from("gn-editor")
+}
+
+fn find_settings_binary() -> PathBuf {
+    if let Ok(exe) = std::env::current_exe() {
+        let sibling = exe.parent().map(|d| d.join("gn-settings"));
+        if let Some(ref path) = sibling {
+            if path.exists() {
+                return path.clone();
+            }
+        }
+        let sibling = exe.parent().map(|d| d.join("gn-settings.exe"));
+        if let Some(ref path) = sibling {
+            if path.exists() {
+                return path.clone();
+            }
+        }
+    }
+    // Fallback: assume it's in PATH
+    PathBuf::from("gn-settings")
 }
 
 fn create_tray_icon() -> Icon {

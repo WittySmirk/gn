@@ -41,3 +41,7 @@ rfd = "0.17"
 [[bin]]
 name = "gn-editor"
 path = "src/bin/editor/main.rs"
+
+[[bin]]
+name = "gn-settings"
+path = "src/bin/settings/main.rs"

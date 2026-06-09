@@ -44,7 +44,7 @@ fn detect_system_audio() -> Option<String> {
         let section = stderr.split("AVFoundation audio devices:").nth(1)?;
         for line in section.lines() {
             if line.contains("BlackHole") {
-                let idx = line.split('[').nth(1)?.split(']').next()?.parse::<u32>().ok()?;
+                let idx = line.split('[').nth(2)?.split(']').next()?.parse::<u32>().ok()?;
                 return Some(idx.to_string());
             }
         }

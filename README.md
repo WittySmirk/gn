@@ -1,51 +1,24 @@
 # gn
-## Minimalist clipping software without the bloat
-Easily record and trim clips and save to computer or upload to Google Drive
 
-<img src="./docs/screenshot.png" />
+Minimalist screen clipping daemon — cross-platform Rust rewrite.
 
-## Dependencies
-- FFMPEG (decoding & trimming)
-- libOBS (screen recording)
-- SDL3 (main GUI)
-- Win32 (background application)
+- System tray icon with menu (Start/Stop Recording, Open Editor, Settings, Quit)
+- Global hotkeys (`Shift+F3`/`F4`, `Cmd+Shift+F3`/`F4` on macOS)
+- Recording thread managed by the daemon process (capture logic TBD)
 
-## Building
+## Build
+
 ```bash
-# Get ffmpeg binaries with lib. Edit CMakeLists to the correct path of ffmpeg.
-
-# Get libobs prebuilt from streamlabs https://obsstudios3.streamlabs.com/libobs-windows64-release-27.5.32.7z Edut CNakeLists to correct path.
-# Example of using libobs is https://github.com/lulzsun/libobs-sharp/tree/main this repo uses a similar pattern
-
-# Get SDL3 via command:
-git clone https://github.com/libsdl-org/SDL.git vendored/SDL
-# GET SDL3_ttf via command:
-git clone --recursive https://github.com/libsdl-org/SDL_ttf.git vendored/SDL_ttf
-
-# Run 
-cmake -S . -B build
-cmake --build build
-
+cargo build
+cargo run
 ```
 
-## Usage
-Background
-- Shift+F4 (start/stop recording)
-- Shift+F3 (open editor)
+Logging controlled by `RUST_LOG` env var (default: `info`):
 
-Editing
-- Esc (close editor)
-- Space (pause/unpause video)
-- Left/Right / H/L (seek left and right)
-- M (place marker)
-- C (clear markers)
-- E (export)
-- S (open settings)
-- N (open new capture)
+```bash
+RUST_LOG=debug cargo run
+```
 
-SETTINGS
-- Esc (close window)
-- S (open editor)
+## Dependencies
 
-## Disclaimer
-Right now this application is only available on Windows. It is possible to make multiplatform, but right now it relies heavily on Win32 apis.
+See `Cargo.toml` for full list. Platform-specific macOS deps (`objc2-*`) are gated by `cfg(target_os = "macos")`.

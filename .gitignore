@@ -1,6 +1,4 @@
-build/
+/target/
 .vscode/
 captures/
 clips/
-Settings
-vendored/

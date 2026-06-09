@@ -123,7 +123,9 @@ fn main() {
         } else {
             log::warn!("No system audio loopback device found.");
             #[cfg(target_os = "macos")]
-            log::warn!("  Install BlackHole: brew install blackhole-2ch");
+            log::warn!("  Install BlackHole: brew install --cask blackhole-2ch");
+            #[cfg(target_os = "macos")]
+            log::warn!("  Then open Audio MIDI Setup and create a Multi-Output Device");
             #[cfg(target_os = "windows")]
             log::warn!("  Enable Stereo Mix in Sound Control Panel > Show Disabled Devices");
             #[cfg(target_os = "linux")]
